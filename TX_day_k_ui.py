@@ -22,7 +22,7 @@ class mainwin(QtWidgets.QWidget):
         super().__init__()
         self.setObjectName("FITXN_1TF")
         self.setWindowTitle("台指期近一 回測分析")
-        self.setWindowIcon(QtGui.QIcon('before20250322\Frank_TXicon_24x24.ico'))
+        self.setWindowIcon(QtGui.QIcon('Frank_TXicon_24x24.ico')) #TODO
         self.resize(2000,1200)
         self.top_def_ck1 = True
         self.top_def_ck2 = False
