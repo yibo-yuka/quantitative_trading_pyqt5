@@ -968,7 +968,7 @@ class mainwin(QtWidgets.QWidget):
             return
         start_date = self.date_val_1.date().toString(QtCore.Qt.ISODate)
         end_date = self.date_val_2.date().toString(QtCore.Qt.ISODate)
-        data_start_date = self.date_val_1.date().addDays(-3).toString(QtCore.Qt.ISODate)
+        data_start_date = self.date_val_1.date().addMonths(-3).toString(QtCore.Qt.ISODate)
         data_end_date = self.date_val_2.date().addMonths(3).toString(QtCore.Qt.ISODate)
         top_ck = self.tacticCheckbtn1.isChecked()
         top_stop_ck = self.tacticCheckbtn2.isChecked()
