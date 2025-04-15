@@ -826,14 +826,14 @@ class mainwin(QtWidgets.QWidget):
                 amount = abs(df.loc[next_i,'position']-df.loc[i,'position'])
                 if amount != 0:
                     signal_data.append([f"{str(datetime.datetime.now()).split(' ')[1][:-3]}","台股指數近月","回測成交",
-                                        f"成交時間:{str(df.loc[next_i,'日期']).split(' ')[0]} 15:00:00.000({actionStr}) 數量:{amount} 價格:{df.loc[next_i,'當時開盤價']}"])
+                                        f"成交時間:{str(df.loc[next_i,'日期']).split(' ')[0]} {str(df.loc[next_i,'時間區間']).split('~')[0]}({actionStr}) 數量:{amount} 價格:{df.loc[next_i,'當時開盤價']}"])
         signal_df = pd.DataFrame(signal_data,columns=["時間","商品","動作","內容"])
         
         return signal_df
 
     def getTradeDetail(self,df:pd.DataFrame,principal:float):
         ind_ls = df.index.tolist()
-        temp_df = df[["日期","position","當時開盤價","income($)"]]
+        temp_df = df[["日期","時間區間","position","當時開盤價","income($)"]]
         temp_df = temp_df.dropna(subset=["當時開盤價"],axis=0)
         temp_ind_ls = temp_df.index.tolist()
         trade_data = []
@@ -851,14 +851,16 @@ class mainwin(QtWidgets.QWidget):
             #act_time_1 = str(df.loc[ind_ls[ind_ls.index(pre_i)-1],"日期"]).split(" ")[0]
             #act_time_2 = str(df.loc[ind_ls[ind_ls.index(i)-1],"日期"]).split(" ")[0]
             #20250322 只要是"當時開盤價"有值的那一行，那行日期就是入場/出場日期
-            act_time_1 = str(df.loc[ind_ls[ind_ls.index(pre_i)],"日期"]).split(" ")[0]
-            act_time_2 = str(df.loc[ind_ls[ind_ls.index(i)],"日期"]).split(" ")[0]
+            act_time_date_1 = str(df.loc[ind_ls[ind_ls.index(pre_i)],"日期"]).split(" ")[0]
+            act_time_start_1 = str(df.loc[ind_ls[ind_ls.index(pre_i)],"時間區間"]).split("~")[0]
+            act_time_date_2 = str(df.loc[ind_ls[ind_ls.index(i)],"日期"]).split(" ")[0]
+            act_time_start_2 = str(df.loc[ind_ls[ind_ls.index(i)],"時間區間"]).split("~")[0]
             pre_i_ind_inList = ind_ls.index(pre_i)
             i_ind_inList = ind_ls.index(i)
             
             if temp_df.loc[i,"income($)"] is not pd.NA:
-                temp_trade_data = ["台股指數近月(FITXN*1.TF)",f"{i_ind_inList-pre_i_ind_inList}",f"{act_time_1} 15:00:00",f"{action1} {temp_df.loc[pre_i,'當時開盤價']}",
-                                f"{act_time_2} 15:00:00",f"{action2} {temp_df.loc[i,'當時開盤價']}",abs(trade_amount),temp_df.loc[i,"income($)"]]
+                temp_trade_data = ["台股指數近月(FITXN*1.TF)",f"{i_ind_inList-pre_i_ind_inList}",f"{act_time_date_1} {act_time_start_1}",f"{action1} {temp_df.loc[pre_i,'當時開盤價']}",
+                                f"{act_time_date_2} {act_time_start_2}",f"{action2} {temp_df.loc[i,'當時開盤價']}",abs(trade_amount),temp_df.loc[i,"income($)"]]
                 trade_data.append(temp_trade_data)
         trade_df = pd.DataFrame(trade_data,columns=["商品名稱","持有區間","進場時間","進場價格","出場時間","出場價格","交易數量","獲利金額"])
         temp_income_ls = []
