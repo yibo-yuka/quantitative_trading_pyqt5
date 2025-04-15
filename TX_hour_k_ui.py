@@ -565,6 +565,7 @@ class mainwin(QtWidgets.QWidget):
         return df
 
     def find_pos(self,df:pd.DataFrame)->pd.DataFrame:
+        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck
         """
         依照OSC起伏找出波峰、波谷,並記錄波峰時最高價、波谷時最低價
         20250321細節補充：
@@ -587,11 +588,24 @@ class mainwin(QtWidgets.QWidget):
                 val = df.loc[i-1,"OSC"]# 波峰波谷候選 
                 val_add1 = df.loc[i,"OSC"]# 波峰波谷候選 後一個點
                 #print(val_minus1,val,val_add1)
-                if val>val_minus1 and val>val_add1:
+                positive_check = False
+                negative_check = False
+                if top_ck:
+                    positive_check = True
+                if positive_top_ck:
+                    all_positive_bool_ls = [v>0 for v in [val_minus1,val,val_add1]]
+                    positive_check = all(all_positive_bool_ls)
+                if bot_ck:
+                    negative_check = True
+                if negative_bot_ck:
+                    all_negative_bool_ls = [v<0 for v in [val_minus1,val,val_add1]]
+                    negative_check = all(all_negative_bool_ls)
+                
+                if val>val_minus1 and val>val_add1 and positive_check:
                     pos_ls.append("波峰")
                     high_ls.append(df.loc[i-1,"High"])
                     low_ls.append("")
-                elif val<val_minus1 and val<val_add1:
+                elif val<val_minus1 and val<val_add1 and negative_check:
                     pos_ls.append("波谷")
                     high_ls.append("")
                     low_ls.append(df.loc[i-1,"Low"])
@@ -614,7 +628,8 @@ class mainwin(QtWidgets.QWidget):
         return df
         
     def read_position(self,df:pd.DataFrame)->pd.DataFrame:
-        global top_ck,top_stop_ck,bot_ck,bot_stop_ck
+        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck
+        
         """
         判斷背離與止損
 
@@ -634,7 +649,7 @@ class mainwin(QtWidgets.QWidget):
         bot_ind_ls = df_b.index.tolist()
         #讀取df_t每個row"OSC波峰波谷"，如果OSC跟最高價趨勢相反，紀錄頂背離訊號在df
         for i in range(len(top_ind_ls)-1):
-            if top_ck:
+            if top_ck or positive_top_ck:
                 if self.top_def_ck1:
                     if df.loc[top_ind_ls[i],"OSC"]>df.loc[top_ind_ls[i+1],"OSC"] and df.loc[top_ind_ls[i],"波峰最高價"]<df.loc[top_ind_ls[i+1],"波峰最高價"]:
                         df.loc[top_ind_ls[i+1],"訊號"] = "頂背離"
@@ -646,7 +661,7 @@ class mainwin(QtWidgets.QWidget):
                 break
         #讀取df_b每個row"OSC波峰波谷"，如果OSC跟最低價趨勢相反，紀錄底背離訊號在df
         for i in range(len(bot_ind_ls)-1):
-            if bot_ck:
+            if bot_ck or negative_bot_ck:
                 if self.bot_def_ck1:
                     if df.loc[bot_ind_ls[i],"OSC"]<df.loc[bot_ind_ls[i+1],"OSC"] and df.loc[bot_ind_ls[i],"波谷最低價"]>df.loc[bot_ind_ls[i+1],"波谷最低價"]:
                         df.loc[bot_ind_ls[i+1],"訊號"] = "底背離"
@@ -974,7 +989,7 @@ class mainwin(QtWidgets.QWidget):
         return Warning_ls
     
     def backTesting(self):
-        global df,top_ck,top_stop_ck,bot_ck,bot_stop_ck
+        global df,top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck
         df = pd.read_excel('2022-01-01~2025-03-31_小時k_20250401.xlsx') #TODO 之後df需要在回測前更新沒有的資料
         warning_ls = self.checkParam()
         if warning_ls:
@@ -993,6 +1008,8 @@ class mainwin(QtWidgets.QWidget):
         top_stop_ck = self.tacticCheckbtn2.isChecked()
         bot_ck = self.tacticCheckbtn3.isChecked()
         bot_stop_ck = self.tacticCheckbtn4.isChecked()
+        positive_top_ck = self.tacticCheckbtn5.isChecked()
+        negative_bot_ck = self.tacticCheckbtn6.isChecked()
         # 這裡需要提醒什麼都沒勾，但沒勾照樣是可以測
         reply = ""
         if  (not top_ck) and (not top_stop_ck) and (not bot_ck) and (not bot_stop_ck):
