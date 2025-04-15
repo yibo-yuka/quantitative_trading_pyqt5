@@ -576,7 +576,7 @@ class mainwin(QtWidgets.QWidget):
         Returns:
             df (pd.DataFrame): 加了波峰波谷資料的日k資料
         """
-        df.reset_index(inplace=True)
+        #df.reset_index(inplace=True)
         pos_ls = []
         high_ls = []
         low_ls = []
@@ -748,7 +748,7 @@ class mainwin(QtWidgets.QWidget):
         return df
 
     def getIncome(self,df:pd.DataFrame):
-        temp_df = df[["日期","position","當時開盤價"]]
+        temp_df = df[["日期","時間區間","position","當時開盤價"]]
         temp_df = temp_df.dropna(how="any",axis=0)
         #部位變高->(後Open-前Open)*-1(買回做空的期貨)
         #部位變低->(後Open-前Open)(賣出做多的期貨)
@@ -773,8 +773,8 @@ class mainwin(QtWidgets.QWidget):
         income_ls.insert(0,pd.NA)
         income_ls = income_ls[:-1]
         temp_df["income($)"] = income_ls
-        temp_df = temp_df[["日期","income($)"]]
-        df = df.merge(temp_df,on=["日期"],how="left")
+        temp_df = temp_df[["日期","時間區間","income($)"]]
+        df = df.merge(temp_df,on=["日期","時間區間"],how="left")
         
         return df
 
