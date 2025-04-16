@@ -578,7 +578,8 @@ class mainwin(QtWidgets.QWidget):
             df (pd.DataFrame): 加了波峰波谷資料的日k資料
         """
         #df.reset_index(inplace=True)
-        pos_ls = []
+        
+        pos_ls = ["" for i in range(len(df))]
         high_ls = []
         low_ls = []
         for i in range(len(df)):
@@ -588,24 +589,31 @@ class mainwin(QtWidgets.QWidget):
                 val = df.loc[i-1,"OSC"]# 波峰波谷候選 
                 val_add1 = df.loc[i,"OSC"]# 波峰波谷候選 後一個點
                 #print(val_minus1,val,val_add1)
-                positive_check = False
-                negative_check = False
                 if top_ck:
-                    positive_check = True
+                    if val>val_minus1 and val>val_add1:
+                        pos_ls[i] = "波峰"
+                    
                 if positive_top_ck:
                     all_positive_bool_ls = [v>0 for v in [val_minus1,val,val_add1]]
                     positive_check = all(all_positive_bool_ls)
+                    if val>val_minus1 and val>val_add1 and positive_check:
+                        pos_ls[i] = "波峰"
+                        
                 if bot_ck:
-                    negative_check = True
+                    if val<val_minus1 and val<val_add1:
+                        pos_ls[i] = "波谷"
+                
                 if negative_bot_ck:
                     all_negative_bool_ls = [v<0 for v in [val_minus1,val,val_add1]]
                     negative_check = all(all_negative_bool_ls)
-                
-                if val>val_minus1 and val>val_add1 and positive_check:
+                    if val<val_minus1 and val<val_add1 and negative_check:
+                        pos_ls[i] = "波谷"
+                '''
+                if val>val_minus1 and val>val_add1:
                     pos_ls.append("波峰")
                     high_ls.append(df.loc[i-1,"High"])
                     low_ls.append("")
-                elif val<val_minus1 and val<val_add1 and negative_check:
+                elif val<val_minus1 and val<val_add1:
                     pos_ls.append("波谷")
                     high_ls.append("")
                     low_ls.append(df.loc[i-1,"Low"])
@@ -613,13 +621,18 @@ class mainwin(QtWidgets.QWidget):
                     pos_ls.append("")
                     high_ls.append("")
                     low_ls.append("")
+                '''
+            '''
             else:
                 pos_ls.append("")
                 high_ls.append("")
                 low_ls.append("")
-        pos_ls.append("") # index = len(df)-1
-        high_ls.append("") # index = len(df)-1
-        low_ls.append("") # index = len(df)-1
+            '''
+        high_ls = [df.loc[i-1,"High"] if pos_ls[i] == "波峰" else "" for i in range(len(df))]
+        low_ls = [df.loc[i-1,"Low"] if pos_ls[i] == "波谷" else "" for i in range(len(df))]
+        pos_ls.append("") # 平移後index = len(df)-1
+        high_ls.append("") # 平移後index = len(df)-1
+        low_ls.append("") # 平移後index = len(df)-1
         #在找到波峰/波谷時，已經是下一天，所以波峰/波谷要往前平移一天
         #最高價與最低價已經是抓前一天的值，一起平移就好
         df["OSC波峰波谷"] = pos_ls[1:]
@@ -649,28 +662,67 @@ class mainwin(QtWidgets.QWidget):
         bot_ind_ls = df_b.index.tolist()
         #讀取df_t每個row"OSC波峰波谷"，如果OSC跟最高價趨勢相反，紀錄頂背離訊號在df
         for i in range(len(top_ind_ls)-1):
-            if top_ck or positive_top_ck:
+            if top_ck:
                 if self.top_def_ck1:
                     if df.loc[top_ind_ls[i],"OSC"]>df.loc[top_ind_ls[i+1],"OSC"] and df.loc[top_ind_ls[i],"波峰最高價"]<df.loc[top_ind_ls[i+1],"波峰最高價"]:
-                        df.loc[top_ind_ls[i+1],"訊號"] = "頂背離"
+                        df.loc[top_ind_ls[i+1],"訊號"] += "(不分正負)頂背離＆"
                 if self.top_def_ck2:
                     #這個保留起來，放UI上提供選擇
                     if df.loc[top_ind_ls[i],"OSC"]<df.loc[top_ind_ls[i+1],"OSC"] and df.loc[top_ind_ls[i],"波峰最高價"]>df.loc[top_ind_ls[i+1],"波峰最高價"]:
-                        df.loc[top_ind_ls[i+1],"訊號"] = "頂背離"
+                        df.loc[top_ind_ls[i+1],"訊號"] += "(不分正負)頂背離＆"
             else:
                 break
         #讀取df_b每個row"OSC波峰波谷"，如果OSC跟最低價趨勢相反，紀錄底背離訊號在df
         for i in range(len(bot_ind_ls)-1):
-            if bot_ck or negative_bot_ck:
+            if bot_ck:
                 if self.bot_def_ck1:
                     if df.loc[bot_ind_ls[i],"OSC"]<df.loc[bot_ind_ls[i+1],"OSC"] and df.loc[bot_ind_ls[i],"波谷最低價"]>df.loc[bot_ind_ls[i+1],"波谷最低價"]:
-                        df.loc[bot_ind_ls[i+1],"訊號"] = "底背離"
+                        df.loc[bot_ind_ls[i+1],"訊號"] += "(不分正負)底背離＆"
                 if self.bot_def_ck2:
                     #這個保留起來，放UI上提供選擇
                     if df.loc[bot_ind_ls[i],"OSC"]>df.loc[bot_ind_ls[i+1],"OSC"] and df.loc[bot_ind_ls[i],"波谷最低價"]<df.loc[bot_ind_ls[i+1],"波谷最低價"]:
-                        df.loc[bot_ind_ls[i+1],"訊號"] = "底背離"
+                        df.loc[bot_ind_ls[i+1],"訊號"] += "(不分正負)底背離＆"
             else:
                 break
+            
+        if positive_top_ck:
+            positive_top_ls = [False for i in range(len(df))]
+            osc_ls = df["OSC"].tolist()
+            position_ls = df["OSC波峰波谷"].tolist()
+            for i in range(1,len(position_ls)-1):
+                p = position_ls[i]
+                all_positive = all([osc_ls[i-1]>0,osc_ls[i]>0,osc_ls[i+1]>0])
+                if p == "波峰" and all_positive:
+                    positive_top_ls[i] = True
+            df["正向頂背離"] = positive_top_ls
+            
+            temp_df = df[df["正向頂背離"]]
+            posi_top_ind_ls = temp_df.index.tolist()
+            for i in range(len(posi_top_ind_ls)-1):
+                if df.loc[posi_top_ind_ls[i],"OSC"]>df.loc[posi_top_ind_ls[i+1],"OSC"] and df.loc[posi_top_ind_ls[i],"波峰最高價"]<df.loc[posi_top_ind_ls[i+1],"波峰最高價"]:
+                        df.loc[posi_top_ind_ls[i+1],"訊號"] += "頂背離＆"
+                #TODO 之後要把另一個方向的趨勢背離加上
+            df.drop("正向頂背離",axis=1,inplace=True)
+            
+        if negative_bot_ck:
+            negative_bot_ls = [False for i in range(len(df))]
+            osc_ls = df["OSC"].tolist()
+            position_ls = df["OSC波峰波谷"].tolist()
+            for i in range(1,len(position_ls)-1):
+                p = position_ls[i]
+                all_negative = all([osc_ls[i-1]<0,osc_ls[i]<0,osc_ls[i+1]<0])
+                if p == "波谷" and all_negative:
+                    negative_bot_ls[i] = True
+            df["負向底背離"] = negative_bot_ls
+            
+            temp_df = df[df["負向底背離"]]
+            nega_bot_ind_ls = temp_df.index.tolist()
+            for i in range(len(nega_bot_ind_ls)-1):
+                if df.loc[nega_bot_ind_ls[i],"OSC"]<df.loc[nega_bot_ind_ls[i+1],"OSC"] and df.loc[nega_bot_ind_ls[i],"波谷最低價"]>df.loc[nega_bot_ind_ls[i+1],"波谷最低價"]:
+                        df.loc[nega_bot_ind_ls[i+1],"訊號"] += "底背離＆"
+                #TODO 之後要把另一個方向的趨勢背離加上
+            df.drop("負向底背離",axis=1,inplace=True)
+            
         # 20250324 要先把背離的訊號往後移一天，再判斷止損
         # 這些訊號出現時，是在波峰波谷出現的後一天
         # 所以這裡的訊號要往後移一天
@@ -684,7 +736,7 @@ class mainwin(QtWidgets.QWidget):
         low_stop = 0    
         for i in range(1,len(df)):
             if top_stop_ck:
-                if df.loc[i,"訊號"] == "頂背離":
+                if  "頂背離" in df.loc[i,"訊號"]:
                     state = "做空"
                     high_stop = df.loc[i-1,"波峰最高價"] #因為訊號是後一天出現，所以抓前一天波峰最高價
                     continue
@@ -697,7 +749,7 @@ class mainwin(QtWidgets.QWidget):
                         high_stop = 0
                         low_stop = 0
             if bot_stop_ck:
-                if df.loc[i,"訊號"] == "底背離":
+                if  "底背離" in df.loc[i,"訊號"]:
                     state = "做多"
                     low_stop = df.loc[i-1,"波谷最低價"] #因為訊號是後一天出現，所以抓前一天波谷最低價
                     continue
@@ -727,23 +779,23 @@ class mainwin(QtWidgets.QWidget):
         pos_ls = []
         open_record = []
         for i in df.index.tolist():
-            if df.loc[i,"訊號"] == "頂背離":
+            if df.loc[i,"訊號"] == "頂背離止損" or df.loc[i,"訊號"] == "底背離止損":
+                if pos != 0:
+                    pos = 0
+                pos_ls.append(pos)
+                open_record.append(True)
+            elif "頂背離" in df.loc[i,"訊號"]:
                 if pos > 0:
                     pos = -1*pos
                 elif pos == 0:
                     pos -= 1
                 pos_ls.append(pos)
                 open_record.append(True)
-            elif df.loc[i,"訊號"] == "底背離":
+            elif "底背離" in df.loc[i,"訊號"]:
                 if pos < 0:
                     pos = -1*pos
                 elif pos == 0:
                     pos += 1
-                pos_ls.append(pos)
-                open_record.append(True)
-            elif df.loc[i,"訊號"] == "頂背離止損" or df.loc[i,"訊號"] == "底背離止損":
-                if pos != 0:
-                    pos = 0
                 pos_ls.append(pos)
                 open_record.append(True)
             else:
@@ -835,8 +887,9 @@ class mainwin(QtWidgets.QWidget):
                 elif df.loc[next_i,'position']-df.loc[i,'position'] > 0:
                     actionStr = "買進"
                 #交易指令
+                signal_content = df.loc[i,"訊號"][:-1] if df.loc[i,"訊號"][-1] == "＆" else df.loc[i,"訊號"]
                 signal_data.append([f"{str(datetime.datetime.now()).split(' ')[1][:-3]}","台股指數近月","交易指令",
-                                    f"實際部位:{df.loc[i,'position']} 目標部位:{df.loc[next_i,'position']} 價格：市價 (訊號：{df.loc[i,'訊號']})"])
+                                    f"實際部位:{df.loc[i,'position']} 目標部位:{df.loc[next_i,'position']} 價格：市價 (訊號：{signal_content})"])
                 #回測成交
                 amount = abs(df.loc[next_i,'position']-df.loc[i,'position'])
                 if amount != 0:
@@ -1012,7 +1065,7 @@ class mainwin(QtWidgets.QWidget):
         negative_bot_ck = self.tacticCheckbtn6.isChecked()
         # 這裡需要提醒什麼都沒勾，但沒勾照樣是可以測
         reply = ""
-        if  (not top_ck) and (not top_stop_ck) and (not bot_ck) and (not bot_stop_ck):
+        if  not any([top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck]) :
             self._info = QtWidgets.QMessageBox(self)
             reply = self._info.question(self,"提醒","未設定任何策略，確定進行回測?",
                                         QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, 
@@ -1029,6 +1082,7 @@ class mainwin(QtWidgets.QWidget):
         df = self.read_position(df)
         df = self.decide_position(df)
         df = self.getIncome(df)
+        df["訊號"] = [s[:-1] if s and s[-1] == "＆" else s for s in df["訊號"]]
         df = df[(df["日期"]>pd.to_datetime(start_date)) & (df["日期"]<pd.to_datetime(end_date))]
         
         self._info = QtWidgets.QMessageBox(self)
