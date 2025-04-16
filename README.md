@@ -4,9 +4,9 @@
 再使用背離、背離止損策略，進行回測。
 
 ## 檔案介紹
-1.TX_day_k_ui.py 是日k回測的UI檔案。
-2.vm_hour_k.py 是在GCP上的VM跑的期貨交易明細整理成小時K的程式。
-3.TX_hour_k_ui.py 是小時k回測的UI檔案。
+1. TX_day_k_ui.py 是日k回測的UI檔案。
+2. vm_hour_k.py 是在GCP上的VM跑的期貨交易明細整理成小時K的程式。
+3. TX_hour_k_ui.py 是小時k回測的UI檔案。
 
 ## 介面設計
 1. 使用PyQt5套件，設計可以控制回測範圍、回測本金、策略使用、並即時顯示報表在UI上。
