@@ -28,6 +28,11 @@ class mainwin(QtWidgets.QWidget):
         self.top_def_ck2 = False
         self.bot_def_ck1 = True
         self.bot_def_ck2 = False
+        self.posi_top_def_ck1 = True
+        self.posi_top_def_ck2 = False
+        self.nega_bot_def_ck1 = True
+        self.nega_bot_def_ck2 = False
+        self.osc_ratio_set = 1.1
         
         self.Hlayout = QtWidgets.QHBoxLayout(self)
         # 創建分割器
@@ -57,6 +62,9 @@ class mainwin(QtWidgets.QWidget):
     
     def strategy_ui(self):
         
+        self.strategy_wid = QtWidgets.QWidget(self)
+        
+        self.strategy_wid_V = QtWidgets.QVBoxLayout(self.strategy_wid)
         self.strategyLb = QtWidgets.QLabel(self)
         self.strategyLb.setObjectName("StrategyLabel")
         self.strategyLb.setText("策略設定")
@@ -70,19 +78,21 @@ class mainwin(QtWidgets.QWidget):
                                       """)
         
         #self.strategyLb.move(50,20)
-        self.left_part.addWidget(self.strategyLb)
+        self.strategy_wid_V.addWidget(self.strategyLb)
         self.left_wid_1 = QtWidgets.QWidget()
         self.left_wid_2 = QtWidgets.QWidget()
         self.left_wid_3 = QtWidgets.QWidget()
         self.left_wid_4 = QtWidgets.QWidget()
         self.left_wid_5 = QtWidgets.QWidget()
         self.left_wid_6 = QtWidgets.QWidget()
+        self.left_wid_7 = QtWidgets.QWidget()
         self.left_Vlayout1 = QtWidgets.QHBoxLayout(self.left_wid_1)
         self.left_Vlayout2 = QtWidgets.QHBoxLayout(self.left_wid_2)
         self.left_Vlayout3 = QtWidgets.QHBoxLayout(self.left_wid_3)
         self.left_Vlayout4 = QtWidgets.QHBoxLayout(self.left_wid_4)
         self.left_Vlayout5 = QtWidgets.QHBoxLayout(self.left_wid_5)
         self.left_Vlayout6 = QtWidgets.QHBoxLayout(self.left_wid_6)
+        self.left_Vlayout7 = QtWidgets.QHBoxLayout(self.left_wid_7)
         self.tacticCheckbtn1 = QtWidgets.QCheckBox("(不分正負)頂背離",self)
         #self.tacticCheckbtn1.move(50,100)
         self.tacticCheckbtn1.setChecked(True)
@@ -109,40 +119,50 @@ class mainwin(QtWidgets.QWidget):
         self.left_Vlayout4.addWidget(self.tacticCheckbtn4)
         
         self.adjustBtn1 = QtWidgets.QPushButton("調整定義",self)
-        #self.adjustBtn1.move(250,90)
-        #TODO 子視窗函數完成後再開
-        #self.adjustTopDefine_ui = AdjustTopReverseDefination_ui()
         self.adjustBtn1.clicked.connect(self.open_top_define_setting)
         self.left_Vlayout1.addWidget(self.adjustBtn1)
         self.adjustBtn2 = QtWidgets.QPushButton("不可調整",self)
         self.adjustBtn2.setDisabled(True)
-        #self.adjustBtn2.move(250,150)
         self.left_Vlayout2.addWidget(self.adjustBtn2)
         self.adjustBtn3 = QtWidgets.QPushButton("調整定義",self)
-        #self.adjustBtn3.move(250,210)
-        #TODO 子視窗函數完成後再開
-        #self.adjustBotDefine_ui = AdjustBotReverseDefination_ui()
         self.adjustBtn3.clicked.connect(self.open_bot_define_setting)
         self.left_Vlayout3.addWidget(self.adjustBtn3)
         self.adjustBtn4 = QtWidgets.QPushButton("不可調整",self)
         self.adjustBtn4.setDisabled(True)
         #self.adjustBtn4.move(250,270)
         self.left_Vlayout4.addWidget(self.adjustBtn4)
-        self.adjustBtn5 = QtWidgets.QPushButton("不可調整",self)
-        self.adjustBtn5.setDisabled(True)
+        self.adjustBtn5 = QtWidgets.QPushButton("調整定義",self)
+        self.adjustBtn5.clicked.connect(self.open_posi_top_define_setting)
+        #self.adjustBtn5.setDisabled(True)
         #self.adjustBtn4.move(250,270)
         self.left_Vlayout5.addWidget(self.adjustBtn5)
-        self.adjustBtn6 = QtWidgets.QPushButton("不可調整",self)
-        self.adjustBtn6.setDisabled(True)
+        self.adjustBtn6 = QtWidgets.QPushButton("調整定義",self)
+        self.adjustBtn6.clicked.connect(self.open_nega_bot_define_setting)
+        #self.adjustBtn6.setDisabled(True)
         #self.adjustBtn4.move(250,270)
         self.left_Vlayout6.addWidget(self.adjustBtn6)
         
-        self.left_part.addWidget(self.left_wid_1)
-        self.left_part.addWidget(self.left_wid_2)
-        self.left_part.addWidget(self.left_wid_3)
-        self.left_part.addWidget(self.left_wid_4)
-        self.left_part.addWidget(self.left_wid_5)
-        self.left_part.addWidget(self.left_wid_6)
+        self.tacticCheckbtn7 = QtWidgets.QCheckBox("OSC絕對值比例",self)
+        self.tacticCheckbtn7.setChecked(True)
+        self.left_Vlayout7.addWidget(self.tacticCheckbtn7)
+        self.adjustBtn7 = QtWidgets.QPushButton("調整定義",self)
+        self.adjustBtn7.clicked.connect(self.open_osc_ratio_setting)
+        self.left_Vlayout7.addWidget(self.adjustBtn7)
+        
+        self.strategy_wid_V.addWidget(self.left_wid_1)
+        self.strategy_wid_V.addWidget(self.left_wid_2)
+        self.strategy_wid_V.addWidget(self.left_wid_3)
+        self.strategy_wid_V.addWidget(self.left_wid_4)
+        self.strategy_wid_V.addWidget(self.left_wid_5)
+        self.strategy_wid_V.addWidget(self.left_wid_6)
+        self.strategy_wid_V.addWidget(self.left_wid_7)
+        
+        self.left_part.addWidget(self.strategy_wid)
+        
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_area.setMinimumSize(500,600)
+        self.scroll_area.setWidget(self.strategy_wid)
+        self.left_part.addWidget(self.scroll_area)
         
         self.settingLb = QtWidgets.QLabel(self)
         self.settingLb.setObjectName("BackTestSettingLabel")
@@ -565,7 +585,7 @@ class mainwin(QtWidgets.QWidget):
         return df
 
     def find_pos(self,df:pd.DataFrame)->pd.DataFrame:
-        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck
+        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit
         """
         依照OSC起伏找出波峰、波谷,並記錄波峰時最高價、波谷時最低價
         20250321細節補充：
@@ -582,6 +602,8 @@ class mainwin(QtWidgets.QWidget):
         pos_ls = ["" for i in range(len(df))]
         high_ls = []
         low_ls = []
+        max_high_ls = []
+        min_low_ls = []
         for i in range(len(df)):
             if i > 1 and i != len(df)-1:
             #if i > 2:
@@ -589,6 +611,11 @@ class mainwin(QtWidgets.QWidget):
                 val = df.loc[i-1,"OSC"]# 波峰波谷候選 
                 val_add1 = df.loc[i,"OSC"]# 波峰波谷候選 後一個點
                 #print(val_minus1,val,val_add1)
+                
+                if osc_ratio_limit:
+                    if (max([abs(val_minus1),abs(val),abs(val_add1)])/min([abs(val_minus1),abs(val),abs(val_add1)]))<=self.osc_ratio_set:
+                        continue #只要最大值跟最小值比例沒有超過某值，不辨識是否為波峰波谷
+                
                 if top_ck:
                     if val>val_minus1 and val>val_add1:
                         pos_ls[i] = "波峰"
@@ -628,16 +655,25 @@ class mainwin(QtWidgets.QWidget):
                 high_ls.append("")
                 low_ls.append("")
             '''
+        
+        max_high = lambda v1,v2,v3:max([v1,v2,v3])
+        min_low = lambda v1,v2,v3:min([v1,v2,v3])
+        max_high_ls = [max_high(df.loc[i-2,"High"],df.loc[i-1,"High"],df.loc[i,"High"]) if pos_ls[i] == "波峰" else "" for i in range(len(df))]
+        min_low_ls = [min_low(df.loc[i-2,"Low"],df.loc[i-1,"Low"],df.loc[i,"Low"]) if pos_ls[i] == "波谷" else "" for i in range(len(df))]
         high_ls = [df.loc[i-1,"High"] if pos_ls[i] == "波峰" else "" for i in range(len(df))]
         low_ls = [df.loc[i-1,"Low"] if pos_ls[i] == "波谷" else "" for i in range(len(df))]
         pos_ls.append("") # 平移後index = len(df)-1
         high_ls.append("") # 平移後index = len(df)-1
         low_ls.append("") # 平移後index = len(df)-1
+        max_high_ls.append("") # 平移後index = len(df)-1
+        min_low_ls.append("") # 平移後index = len(df)-1
         #在找到波峰/波谷時，已經是下一天，所以波峰/波谷要往前平移一天
         #最高價與最低價已經是抓前一天的值，一起平移就好
         df["OSC波峰波谷"] = pos_ls[1:]
         df["波峰最高價"] = high_ls[1:]
         df["波谷最低價"] = low_ls[1:]
+        df["3根k棒波峰最高價"] = max_high_ls[1:]
+        df["3根k棒波谷最低價"] = min_low_ls[1:]
         return df
         
     def read_position(self,df:pd.DataFrame)->pd.DataFrame:
@@ -655,32 +691,38 @@ class mainwin(QtWidgets.QWidget):
         #先設置背離欄位
         df["訊號"] = ["" for i in range(len(df))]
         #OSC波峰資料index df_t
-        df_t = df[df["波峰最高價"] != ""]
+        df_t = df[df["3根k棒波峰最高價"] != ""]
         top_ind_ls = df_t.index.tolist()
         #OSC波谷資料index df_b
-        df_b = df[df["波谷最低價"] != ""]
+        df_b = df[df["3根k棒波谷最低價"] != ""]
         bot_ind_ls = df_b.index.tolist()
         #讀取df_t每個row"OSC波峰波谷"，如果OSC跟最高價趨勢相反，紀錄頂背離訊號在df
         for i in range(len(top_ind_ls)-1):
             if top_ck:
+                pre_high = df.loc[top_ind_ls[i],"3根k棒波峰最高價"]
+                now_high = df.loc[top_ind_ls[i+1],"3根k棒波峰最高價"]
+                    
                 if self.top_def_ck1:
-                    if df.loc[top_ind_ls[i],"OSC"]>df.loc[top_ind_ls[i+1],"OSC"] and df.loc[top_ind_ls[i],"波峰最高價"]<df.loc[top_ind_ls[i+1],"波峰最高價"]:
+                    if df.loc[top_ind_ls[i],"OSC"]>df.loc[top_ind_ls[i+1],"OSC"] and pre_high<now_high:
                         df.loc[top_ind_ls[i+1],"訊號"] += "(不分正負)頂背離＆"
                 if self.top_def_ck2:
                     #這個保留起來，放UI上提供選擇
-                    if df.loc[top_ind_ls[i],"OSC"]<df.loc[top_ind_ls[i+1],"OSC"] and df.loc[top_ind_ls[i],"波峰最高價"]>df.loc[top_ind_ls[i+1],"波峰最高價"]:
+                    if df.loc[top_ind_ls[i],"OSC"]<df.loc[top_ind_ls[i+1],"OSC"] and pre_high>now_high:
                         df.loc[top_ind_ls[i+1],"訊號"] += "(不分正負)頂背離＆"
             else:
                 break
         #讀取df_b每個row"OSC波峰波谷"，如果OSC跟最低價趨勢相反，紀錄底背離訊號在df
         for i in range(len(bot_ind_ls)-1):
             if bot_ck:
+                pre_low = df.loc[bot_ind_ls[i],"3根k棒波谷最低價"]
+                now_low = df.loc[bot_ind_ls[i+1],"3根k棒波谷最低價"]
+
                 if self.bot_def_ck1:
-                    if df.loc[bot_ind_ls[i],"OSC"]<df.loc[bot_ind_ls[i+1],"OSC"] and df.loc[bot_ind_ls[i],"波谷最低價"]>df.loc[bot_ind_ls[i+1],"波谷最低價"]:
+                    if df.loc[bot_ind_ls[i],"OSC"]<df.loc[bot_ind_ls[i+1],"OSC"] and pre_low>now_low:
                         df.loc[bot_ind_ls[i+1],"訊號"] += "(不分正負)底背離＆"
                 if self.bot_def_ck2:
                     #這個保留起來，放UI上提供選擇
-                    if df.loc[bot_ind_ls[i],"OSC"]>df.loc[bot_ind_ls[i+1],"OSC"] and df.loc[bot_ind_ls[i],"波谷最低價"]<df.loc[bot_ind_ls[i+1],"波谷最低價"]:
+                    if df.loc[bot_ind_ls[i],"OSC"]>df.loc[bot_ind_ls[i+1],"OSC"] and pre_low<now_low:
                         df.loc[bot_ind_ls[i+1],"訊號"] += "(不分正負)底背離＆"
             else:
                 break
@@ -699,9 +741,16 @@ class mainwin(QtWidgets.QWidget):
             temp_df = df[df["正向頂背離"]]
             posi_top_ind_ls = temp_df.index.tolist()
             for i in range(len(posi_top_ind_ls)-1):
-                if df.loc[posi_top_ind_ls[i],"OSC"]>df.loc[posi_top_ind_ls[i+1],"OSC"] and df.loc[posi_top_ind_ls[i],"波峰最高價"]<df.loc[posi_top_ind_ls[i+1],"波峰最高價"]:
-                        df.loc[posi_top_ind_ls[i+1],"訊號"] += "頂背離＆"
+                pre_high = df.loc[top_ind_ls[i],"3根k棒波峰最高價"]
+                now_high = df.loc[top_ind_ls[i+1],"3根k棒波峰最高價"]
+                
+                if self.posi_top_def_ck1:
+                    if df.loc[posi_top_ind_ls[i],"OSC"]>df.loc[posi_top_ind_ls[i+1],"OSC"] and pre_high<now_high:
+                            df.loc[posi_top_ind_ls[i+1],"訊號"] += "頂背離＆"
                 #TODO 之後要把另一個方向的趨勢背離加上
+                if self.posi_top_def_ck2:
+                    if df.loc[posi_top_ind_ls[i],"OSC"]<df.loc[posi_top_ind_ls[i+1],"OSC"] and pre_high>now_high:
+                            df.loc[posi_top_ind_ls[i+1],"訊號"] += "頂背離＆"
             df.drop("正向頂背離",axis=1,inplace=True)
             
         if negative_bot_ck:
@@ -718,9 +767,16 @@ class mainwin(QtWidgets.QWidget):
             temp_df = df[df["負向底背離"]]
             nega_bot_ind_ls = temp_df.index.tolist()
             for i in range(len(nega_bot_ind_ls)-1):
-                if df.loc[nega_bot_ind_ls[i],"OSC"]<df.loc[nega_bot_ind_ls[i+1],"OSC"] and df.loc[nega_bot_ind_ls[i],"波谷最低價"]>df.loc[nega_bot_ind_ls[i+1],"波谷最低價"]:
-                        df.loc[nega_bot_ind_ls[i+1],"訊號"] += "底背離＆"
+                pre_low = df.loc[nega_bot_ind_ls[i],"3根k棒波谷最低價"]
+                now_low = df.loc[nega_bot_ind_ls[i+1],"3根k棒波谷最低價"]
+                
+                if self.nega_bot_def_ck1:
+                    if df.loc[nega_bot_ind_ls[i],"OSC"]<df.loc[nega_bot_ind_ls[i+1],"OSC"] and pre_low>now_low:
+                            df.loc[nega_bot_ind_ls[i+1],"訊號"] += "底背離＆"
                 #TODO 之後要把另一個方向的趨勢背離加上
+                if self.nega_bot_def_ck2:
+                    if df.loc[nega_bot_ind_ls[i],"OSC"]>df.loc[nega_bot_ind_ls[i+1],"OSC"] and pre_low<now_low:
+                            df.loc[nega_bot_ind_ls[i+1],"訊號"] += "底背離＆"
             df.drop("負向底背離",axis=1,inplace=True)
             
         # 20250324 要先把背離的訊號往後移一天，再判斷止損
@@ -738,7 +794,7 @@ class mainwin(QtWidgets.QWidget):
             if top_stop_ck:
                 if  "頂背離" in df.loc[i,"訊號"]:
                     state = "做空"
-                    high_stop = df.loc[i-1,"波峰最高價"] #因為訊號是後一天出現，所以抓前一天波峰最高價
+                    high_stop = df.loc[i-1,"3根k棒波峰最高價"] #因為訊號是後一天出現，所以抓前一天波峰最高價
                     continue
                 if high_stop and state == "做空":
                     #temp_high = df.loc[i,"High"]
@@ -751,7 +807,7 @@ class mainwin(QtWidgets.QWidget):
             if bot_stop_ck:
                 if  "底背離" in df.loc[i,"訊號"]:
                     state = "做多"
-                    low_stop = df.loc[i-1,"波谷最低價"] #因為訊號是後一天出現，所以抓前一天波谷最低價
+                    low_stop = df.loc[i-1,"3根k棒波谷最低價"] #因為訊號是後一天出現，所以抓前一天波谷最低價
                     continue
                 if low_stop and state == "做多":
                     #temp_low = df.loc[i,"Low"]
@@ -1042,7 +1098,7 @@ class mainwin(QtWidgets.QWidget):
         return Warning_ls
     
     def backTesting(self):
-        global df,top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck
+        global df,top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit
         df = pd.read_excel('2022-01-01~2025-03-31_小時k_20250401.xlsx') #TODO 之後df需要在回測前更新沒有的資料
         warning_ls = self.checkParam()
         if warning_ls:
@@ -1053,19 +1109,22 @@ class mainwin(QtWidgets.QWidget):
             return
         start_date = self.date_val_1.date().toString(QtCore.Qt.ISODate)
         end_date = self.date_val_2.date().toString(QtCore.Qt.ISODate)
-        data_start_date = self.date_val_1.date().addDays(-3).toString(QtCore.Qt.ISODate)
+        #這次也不需要往前抓，因為往前抓是為了算OSC，資料已經計算好OSC了。
+        #data_start_date = self.date_val_1.date().addDays(-3).toString(QtCore.Qt.ISODate)
         #這次不往後抓，因為osc是往前抓資料算出來的
         #data_end_date = self.date_val_2.date().addMonths(3).toString(QtCore.Qt.ISODate)
-        data_end_date = end_date #TODO 之後UI的結束日期預設要改成資料最晚日期
+        #data_end_date = end_date #TODO 之後UI的結束日期預設要改成資料最晚日期
         top_ck = self.tacticCheckbtn1.isChecked()
         top_stop_ck = self.tacticCheckbtn2.isChecked()
         bot_ck = self.tacticCheckbtn3.isChecked()
         bot_stop_ck = self.tacticCheckbtn4.isChecked()
         positive_top_ck = self.tacticCheckbtn5.isChecked()
         negative_bot_ck = self.tacticCheckbtn6.isChecked()
+        osc_ratio_limit = self.tacticCheckbtn7.isChecked()
+        
         # 這裡需要提醒什麼都沒勾，但沒勾照樣是可以測
         reply = ""
-        if  not any([top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck]) :
+        if  not any([top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit]) :
             self._info = QtWidgets.QMessageBox(self)
             reply = self._info.question(self,"提醒","未設定任何策略，確定進行回測?",
                                         QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, 
@@ -1078,6 +1137,10 @@ class mainwin(QtWidgets.QWidget):
         #df = self.get_1TF(df)
         #df = self.get_daliy_k_bar_range(df,data_start_date,data_end_date)
         #df = self.getMACD_OSC(df)
+        #原先日k是要多少取多少資料，現在是要從三年資料裡取用資料段
+        #因為回測是要從開始投資那天開始計算
+        df = df[(df["日期"]>pd.to_datetime(start_date)) & (df["日期"]<pd.to_datetime(end_date))]
+        df.reset_index(inplace=True,drop=True)
         df = self.find_pos(df)
         df = self.read_position(df)
         df = self.decide_position(df)
@@ -1285,6 +1348,21 @@ class mainwin(QtWidgets.QWidget):
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             self.bot_def_ck1,self.bot_def_ck2 = dialog.getDefineState()
             
+    def open_posi_top_define_setting(self):
+        dialog = PositiveAdjustTopReverseDefination_ui(self.posi_top_def_ck1,self.posi_top_def_ck2, self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.posi_top_def_ck1,self.posi_top_def_ck2 = dialog.getDefineState()
+    
+    def open_nega_bot_define_setting(self):
+        dialog = NegativeAdjustBotReverseDefination_ui(self.nega_bot_def_ck1,self.nega_bot_def_ck2, self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.nega_bot_def_ck1,self.nega_bot_def_ck2 = dialog.getDefineState()
+       
+    def open_osc_ratio_setting(self):
+        dialog = RatioOfOSCs(osc_ratio=self.osc_ratio_set,parent=self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.osc_ratio_set = dialog.get_new_osc_ratio()
+             
 class AdjustTopReverseDefination_ui(QtWidgets.QDialog):
     def __init__(self, top_def_ck1, top_def_ck2, parent=None):
         super().__init__(parent)
@@ -1343,7 +1421,6 @@ class AdjustBotReverseDefination_ui(QtWidgets.QDialog):
         self.define2_ckb.setText("過去OSC>當前OSC 但 過去最低價<現在最低價")
         self.define2_ckb.setChecked(self.o_bot_def_ck2)
         self.Layout_V.addWidget(self.define2_ckb)
-        
         # 建立按鈕 (確定/取消)
         button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok,self)
         button_box.accepted.connect(self.accept_check)
@@ -1362,7 +1439,83 @@ class AdjustBotReverseDefination_ui(QtWidgets.QDialog):
     
     def getDefineState(self):
         return self.define1_ckb.isChecked(),self.define2_ckb.isChecked()
+
+class PositiveAdjustTopReverseDefination_ui(QtWidgets.QDialog):
+    def __init__(self, posi_top_def_ck1, posi_top_def_ck2, parent=None):
+        super().__init__(parent)
+        #self.parent_widget = parent #可能不需要這一行也可以稱為子視窗
+        self.o_top_def_ck1 = posi_top_def_ck1
+        self.o_top_def_ck2 = posi_top_def_ck2
+        #self.setObjectName("TopReverseDefine")
+        self.setWindowTitle("頂背離 定義設定")
+        self.resize(550,300)
+        self.Layout_V = QtWidgets.QVBoxLayout(self)
         
+        self.define1_ckb = QtWidgets.QCheckBox(self)
+        self.define1_ckb.setText("過去OSC>當前OSC 但 過去最高價<現在最高價")
+        self.define1_ckb.setChecked(self.o_top_def_ck1)
+        self.Layout_V.addWidget(self.define1_ckb)
+        self.define2_ckb = QtWidgets.QCheckBox(self)
+        self.define2_ckb.setText("過去OSC<當前OSC 但 過去最高價>現在最高價")
+        self.define2_ckb.setChecked(self.o_top_def_ck2)
+        self.Layout_V.addWidget(self.define2_ckb)
+         # 建立按鈕 (確定/取消)
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok,self)
+        button_box.accepted.connect(self.accept_check)
+        button_box.rejected.connect(self.reject)
+        self.Layout_V.addWidget(button_box)
+    
+    def accept_check(self):
+        if (not self.define1_ckb.isChecked()) and (not self.define2_ckb.isChecked()):
+            self._info = QtWidgets.QMessageBox(self)
+            self._info.information(self,"警告","請至少勾選一項!!!")
+            return
+        else:
+            self.accept()
+    
+    def getDefineState(self):
+        return self.define1_ckb.isChecked(),self.define2_ckb.isChecked()
+
+class NegativeAdjustBotReverseDefination_ui(QtWidgets.QDialog):
+    def __init__(self, nega_bot_def_ck1, nega_bot_def_ck2, parent=None):
+        super().__init__(parent)
+        #self.parent_widget = parent #可能不需要這一行也可以稱為子視窗
+        self.o_bot_def_ck1 = nega_bot_def_ck1
+        self.o_bot_def_ck2 = nega_bot_def_ck2
+        self.setObjectName("BottomReverseDefine")
+        self.setWindowTitle("底背離 定義設定")
+        self.resize(550,300)
+        self.init_ui()
+    
+    def init_ui(self):
+        self.Layout_V = QtWidgets.QVBoxLayout(self)
+        self.define1_ckb = QtWidgets.QCheckBox(self)
+        self.define1_ckb.setText("過去OSC<當前OSC 但 過去最低價>現在最低價")
+        self.define1_ckb.setChecked(self.o_bot_def_ck1)
+        self.Layout_V.addWidget(self.define1_ckb)
+        self.define2_ckb = QtWidgets.QCheckBox(self)
+        self.define2_ckb.setText("過去OSC>當前OSC 但 過去最低價<現在最低價")
+        self.define2_ckb.setChecked(self.o_bot_def_ck2)
+        self.Layout_V.addWidget(self.define2_ckb)
+        # 建立按鈕 (確定/取消)
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok,self)
+        button_box.accepted.connect(self.accept_check)
+        button_box.rejected.connect(self.reject)
+        self.Layout_V.addWidget(button_box)
+        # 標記是否已保存設定
+        #self.settings_saved = False
+    
+    def accept_check(self):
+        if (not self.define1_ckb.isChecked()) and (not self.define2_ckb.isChecked()):
+            self._info = QtWidgets.QMessageBox(self)
+            self._info.information(self,"警告","請至少勾選一項!!!")
+            return
+        else:
+            self.accept()
+    
+    def getDefineState(self):
+        return self.define1_ckb.isChecked(),self.define2_ckb.isChecked()
+
 class DataFrameSelector(QtWidgets.QDialog):
     def __init__(self, dataframes, parent=None):
         super().__init__(parent)
@@ -1417,6 +1570,52 @@ class DataFrameSelector(QtWidgets.QDialog):
         
     def get_selected_dataframes(self):
         return self.selected_dataframes
+
+class RatioOfOSCs(QtWidgets.QDialog):
+    def __init__(self, osc_ratio ,parent=None):
+        super().__init__(parent)
+        self.osc_ratio = osc_ratio
+        self.resize(200,300)
+        self.InitUI()
+    
+    def InitUI(self):
+        self.Layout_V = QtWidgets.QVBoxLayout(self)
+        self.defination_wid = QtWidgets.QWidget(self)
+        self.setWindowTitle("OSC絕對值比例設定")
+        self.layout_h = QtWidgets.QHBoxLayout(self.defination_wid)
+        self.defination_label = QtWidgets.QLabel(self)
+        self.defination_label.setText("(三個OSC絕對值最大值)/(三個OSC絕對值最小值) > ")
+        self.layout_h.addWidget(self.defination_label)
+        self.val_entry = QtWidgets.QLineEdit(self)
+        self.val_entry.setText(str(self.osc_ratio))
+        self.layout_h.addWidget(self.val_entry)
+        self.Layout_V.addWidget(self.defination_wid)
+         # 建立按鈕 (確定/取消)
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok,self)
+        button_box.accepted.connect(self.accept_check)
+        button_box.rejected.connect(self.reject)
+        self.Layout_V.addWidget(button_box)
+    
+    def accept_check(self):
+        try:
+            float(self.val_entry.text())
+        except:
+            QMessageBox.warning(self, "警告", "OSC絕對值比例請填寫數值!!!")
+            return
+        
+        if not self.val_entry.text():
+            QMessageBox.warning(self, "警告", "請填寫OSC絕對值比例!!!")
+            return
+        elif float(self.val_entry.text()) <= 0:
+            QMessageBox.warning(self, "警告", "OSC絕對值比例請填寫正數!!!")
+            return
+        else:
+            self.accept()
+    
+    def get_new_osc_ratio(self):
+        return float(self.val_entry.text())
+    
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
