@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import re
 import datetime
+from datetime import datetime as DT
+from datetime import timedelta
 import time
 import sys
 import calendar
@@ -23,7 +25,10 @@ class mainwin(QtWidgets.QWidget):
         self.setObjectName("FITXN_1TF")
         self.setWindowTitle("台指期近一 回測分析")
         self.setWindowIcon(QtGui.QIcon('Frank_TXicon_24x24.ico')) #TODO
-        self.resize(2000,1200)
+        self.resize(2400,1200)
+        #先更新資料
+        self.updateData()
+        
         self.top_def_ck1 = True
         self.top_def_ck2 = False
         self.bot_def_ck1 = True
@@ -86,6 +91,9 @@ class mainwin(QtWidgets.QWidget):
         self.left_wid_5 = QtWidgets.QWidget()
         self.left_wid_6 = QtWidgets.QWidget()
         self.left_wid_7 = QtWidgets.QWidget()
+        self.left_wid_8 = QtWidgets.QWidget()
+        self.left_wid_9 = QtWidgets.QWidget()
+        self.left_wid_10 = QtWidgets.QWidget()
         self.left_Vlayout1 = QtWidgets.QHBoxLayout(self.left_wid_1)
         self.left_Vlayout2 = QtWidgets.QHBoxLayout(self.left_wid_2)
         self.left_Vlayout3 = QtWidgets.QHBoxLayout(self.left_wid_3)
@@ -93,11 +101,15 @@ class mainwin(QtWidgets.QWidget):
         self.left_Vlayout5 = QtWidgets.QHBoxLayout(self.left_wid_5)
         self.left_Vlayout6 = QtWidgets.QHBoxLayout(self.left_wid_6)
         self.left_Vlayout7 = QtWidgets.QHBoxLayout(self.left_wid_7)
-        self.tacticCheckbtn1 = QtWidgets.QCheckBox("(不分正負)頂背離",self)
+        self.left_Vlayout8 = QtWidgets.QHBoxLayout(self.left_wid_8)
+        self.left_Vlayout9 = QtWidgets.QHBoxLayout(self.left_wid_9)
+        self.left_Vlayout10 = QtWidgets.QHBoxLayout(self.left_wid_10)
+        
+        self.tacticCheckbtn1 = QtWidgets.QCheckBox("(不分正負)\n頂背離",self)
         #self.tacticCheckbtn1.move(50,100)
         self.tacticCheckbtn1.setChecked(True)
         self.left_Vlayout1.addWidget(self.tacticCheckbtn1)
-        self.tacticCheckbtn3 = QtWidgets.QCheckBox("(不分正負)底背離",self)
+        self.tacticCheckbtn3 = QtWidgets.QCheckBox("(不分正負)\n底背離",self)
         #self.tacticCheckbtn3.move(50,220)
         self.tacticCheckbtn3.setChecked(True)
         self.left_Vlayout3.addWidget(self.tacticCheckbtn3)
@@ -149,6 +161,27 @@ class mainwin(QtWidgets.QWidget):
         self.adjustBtn7.clicked.connect(self.open_osc_ratio_setting)
         self.left_Vlayout7.addWidget(self.adjustBtn7)
         
+        self.skip_reverse = QtWidgets.QCheckBox("與上上一個波峰/波谷\n判斷背離",self)
+        self.skip_reverse.setChecked(True)
+        self.left_Vlayout8.addWidget(self.skip_reverse)
+        self.adjustBtn8 = QtWidgets.QPushButton("不可調整",self)
+        self.adjustBtn8.setDisabled(True)
+        self.left_Vlayout8.addWidget(self.adjustBtn8)
+        
+        self.no_inverse_in_middle = QtWidgets.QCheckBox("中途不可翻正/翻負\n才可以判斷背離",self)
+        self.no_inverse_in_middle.setChecked(True)
+        self.left_Vlayout9.addWidget(self.no_inverse_in_middle)
+        self.adjustBtn9 = QtWidgets.QPushButton("不可調整",self)
+        self.adjustBtn9.setDisabled(True)
+        self.left_Vlayout9.addWidget(self.adjustBtn9)
+        
+        self.enter_time_limits = QtWidgets.QCheckBox("進場時間限制",self)
+        self.enter_time_limits.setChecked(True)
+        self.left_Vlayout10.addWidget(self.enter_time_limits)
+        self.adjustBtn10 = QtWidgets.QPushButton("不可調整",self)
+        self.adjustBtn10.setDisabled(True)
+        self.left_Vlayout10.addWidget(self.adjustBtn10)
+        
         self.strategy_wid_V.addWidget(self.left_wid_1)
         self.strategy_wid_V.addWidget(self.left_wid_2)
         self.strategy_wid_V.addWidget(self.left_wid_3)
@@ -156,6 +189,9 @@ class mainwin(QtWidgets.QWidget):
         self.strategy_wid_V.addWidget(self.left_wid_5)
         self.strategy_wid_V.addWidget(self.left_wid_6)
         self.strategy_wid_V.addWidget(self.left_wid_7)
+        self.strategy_wid_V.addWidget(self.left_wid_8)
+        self.strategy_wid_V.addWidget(self.left_wid_9)
+        self.strategy_wid_V.addWidget(self.left_wid_10)
         
         self.left_part.addWidget(self.strategy_wid)
         
@@ -190,7 +226,7 @@ class mainwin(QtWidgets.QWidget):
         self.left_Vlayout7 = QtWidgets.QHBoxLayout(self.left_wid_7)
         
         self.min_15_kbar_cb = QtWidgets.QCheckBox("15分K",self)
-        self.min_15_kbar_cb.setEnabled(False)
+        self.min_15_kbar_cb.setEnabled(True)
         self.hr_1_kbar_cb = QtWidgets.QCheckBox("小時K",self)
         self.hr_1_kbar_cb.setEnabled(True)
         self.hr_1_kbar_cb.setChecked(True)
@@ -272,8 +308,8 @@ class mainwin(QtWidgets.QWidget):
         self.RecordTable = QtWidgets.QTableWidget(self)
         #self.RecordTable.setGeometry(QtCore.QRect(600,100,1200,1000))
         self.RecordTable.setObjectName("RecordTable")
-        self.RecordTable.setColumnCount(6)
-        self.RecordTable.setHorizontalHeaderLabels(["淨利($)","淨利(%)","平均獲利\n虧損比($)","平均獲利\n虧損比(%)","最大區間虧損($)","最大區間虧損(%)"])
+        self.RecordTable.setColumnCount(7)
+        self.RecordTable.setHorizontalHeaderLabels(["時間級別","淨利($)","淨利(%)","平均獲利\n虧損比($)","平均獲利\n虧損比(%)","最大區間虧損($)","最大區間虧損(%)"])
         
         self.tabwid = QtWidgets.QTabWidget(self)
         self.tabwid.setTabsClosable(True)
@@ -283,7 +319,7 @@ class mainwin(QtWidgets.QWidget):
         self.tab1_layout.addWidget(self.RecordTable)
         self.tabwid.addTab(self.tab1,"損益歷史紀錄")
         self.right_part.addWidget(self.tabwid)
-        self.his_df = pd.DataFrame([["","","","","",""]],columns=["淨利($)","淨利(%)","平均獲利\n虧損比($)","平均獲利\n虧損比(%)","最大區間虧損($)","最大區間虧損(%)"])
+        self.his_df = pd.DataFrame([["","","","","","",""]],columns=["時間級別","淨利($)","淨利(%)","平均獲利\n虧損比($)","平均獲利\n虧損比(%)","最大區間虧損($)","最大區間虧損(%)"])
         self.df_dict = {}
         self.df_dict["損益歷史紀錄"] = self.his_df
         self.text_list = QtWidgets.QListWidget(self)
@@ -440,45 +476,48 @@ class mainwin(QtWidgets.QWidget):
     def get_1TF(self,df:pd.DataFrame):
         """
         擷取近一資料
-        20250322更動：
-        因為資料中，同一日期的after market已經是當天15:00開盤的，
-        所以說在第三個星期三當天以前的交易，近月是當月，
-        在第三個星期三當天開始，近月都是下個月。
+        20250331更動：
+        小時k的部分，
+        結算日當日15:00前的是當月算近月，
+        15:00後的下個月算近月
 
         Args:
             df (pd.DataFrame): 只有月結算的資料
 
         Returns:
-            df_1tf (pd.DataFrame): 只有近一的資料
+            df_1tf (pd.DataFrame): 只有近月的資料
         """
-        cols = df.columns.tolist()
+        #cols = df.columns.tolist()
         df["日期"] = pd.to_datetime(df["日期"])
+        df["time"] = pd.to_datetime(df["time"], format='%H:%M:%S').dt.time
         weds = self.find_needed_third_wed(df)
         tf_1_ym = []
-        for ind in range(len(df)):
-            d = (df.loc[ind,"日期"])
-            for i in range(len(weds)):
-                w_day = pd.to_datetime(weds[i])
-                if d.year == w_day.year and d.month == w_day.month: #當月結算日
-                    if d < w_day: #第三個周三以前
-                        tf_1_ym.append(self.date_to_6num(d))
-                    else: #第三個周三以後(包含第三個周三)
-                        tf_1_ym.append(self.date_to_6num_nextMonth(d))
-                    '''
-                    else:# 第三個週三當天交易
-                        if df.loc[ind,"trading_session"] == "position":#盤中
-                            tf_1_ym.append(self.date_to_6num(d))
-                        else: #after_market 盤後
-                            tf_1_ym.append(self.date_to_6num_nextMonth(d))
-                    '''
-        df["近一年月"] = tf_1_ym              
-        #df["YM"] = [date_to_6num_nextMonth(d) for d in df["日期"]]
-        #df["ConDYM"] = [d[:6] for d in df["contract_date"]]
+        
+        d = (df.loc[0,"日期"])
+        for i in range(len(weds)):
+            w_day = pd.to_datetime(weds[i])
+            if d.year == w_day.year and d.month == w_day.month:
+                break
+        if d == w_day: #第三個周三(結算日)
+            temp_time_line = DT.strptime('15:00:00', '%H:%M:%S').time()
+            temp_df1 = df[df["time"]<temp_time_line]
+            temp_df2 = df[df["time"]>=temp_time_line]
+            tf_1_ym += [self.date_to_6num(d)]*len(temp_df1)
+            tf_1_ym += [self.date_to_6num_nextMonth(d)]*len(temp_df2)
+        else:
+            for ind in range(len(df)):
+                d = (df.loc[ind,"日期"])
+                if d < w_day: #第三個周三以前
+                    tf_1_ym.append(self.date_to_6num(d))
+                elif d > w_day: #第三個周三以後(不含第三個周三)
+                    tf_1_ym.append(self.date_to_6num_nextMonth(d))
+        
+        df["近一年月"] = tf_1_ym
         df_1tf = df[df["近一年月"]==df["contract_date"]]
         #df_1tf = df_1tf[cols]
         df_1tf.reset_index(inplace=True,drop=True)
         return df_1tf
-
+    
     def get_daliy_k_bar_range(self,df:pd.DataFrame,startdate,enddate)->pd.DataFrame:
         """
         整理成日k資料
@@ -635,27 +674,7 @@ class mainwin(QtWidgets.QWidget):
                     negative_check = all(all_negative_bool_ls)
                     if val<val_minus1 and val<val_add1 and negative_check:
                         pos_ls[i] = "波谷"
-                '''
-                if val>val_minus1 and val>val_add1:
-                    pos_ls.append("波峰")
-                    high_ls.append(df.loc[i-1,"High"])
-                    low_ls.append("")
-                elif val<val_minus1 and val<val_add1:
-                    pos_ls.append("波谷")
-                    high_ls.append("")
-                    low_ls.append(df.loc[i-1,"Low"])
-                else:
-                    pos_ls.append("")
-                    high_ls.append("")
-                    low_ls.append("")
-                '''
-            '''
-            else:
-                pos_ls.append("")
-                high_ls.append("")
-                low_ls.append("")
-            '''
-        
+                
         max_high = lambda v1,v2,v3:max([v1,v2,v3])
         min_low = lambda v1,v2,v3:min([v1,v2,v3])
         max_high_ls = [max_high(df.loc[i-2,"High"],df.loc[i-1,"High"],df.loc[i,"High"]) if pos_ls[i] == "波峰" else "" for i in range(len(df))]
@@ -677,7 +696,7 @@ class mainwin(QtWidgets.QWidget):
         return df
         
     def read_position(self,df:pd.DataFrame)->pd.DataFrame:
-        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck
+        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,skip_reverse_check,no_inverse_in_mid_check
         
         """
         判斷背離與止損
@@ -699,21 +718,46 @@ class mainwin(QtWidgets.QWidget):
         #讀取df_t每個row"OSC波峰波谷"，如果OSC跟最高價趨勢相反，紀錄頂背離訊號在df
         for i in range(len(top_ind_ls)-1):
             if top_ck:
+                
+                if no_inverse_in_mid_check:
+                    temp_bool = [df.loc[temp_i,"OSC"]>=0 for temp_i in range(top_ind_ls[i],top_ind_ls[i+1]+1)]
+                    if not all(temp_bool):
+                        continue #如果中間翻負，不做以下的背離判斷
+                
                 pre_high = df.loc[top_ind_ls[i],"3根k棒波峰最高價"]
                 now_high = df.loc[top_ind_ls[i+1],"3根k棒波峰最高價"]
-                    
+                
                 if self.top_def_ck1:
                     if df.loc[top_ind_ls[i],"OSC"]>df.loc[top_ind_ls[i+1],"OSC"] and pre_high<now_high:
                         df.loc[top_ind_ls[i+1],"訊號"] += "(不分正負)頂背離＆"
                 if self.top_def_ck2:
-                    #這個保留起來，放UI上提供選擇
                     if df.loc[top_ind_ls[i],"OSC"]<df.loc[top_ind_ls[i+1],"OSC"] and pre_high>now_high:
                         df.loc[top_ind_ls[i+1],"訊號"] += "(不分正負)頂背離＆"
+                
+                if skip_reverse_check and i!=len(top_ind_ls)-2:
+                    if no_inverse_in_mid_check:
+                        temp_bool = [df.loc[temp_i,"OSC"]>=0 for temp_i in range(top_ind_ls[i],top_ind_ls[i+2]+1)]
+                        if not all(temp_bool):
+                            continue #如果中間翻負，不做以下的背離判斷
+                    pre_high = df.loc[top_ind_ls[i],"3根k棒波峰最高價"]
+                    now_high = df.loc[top_ind_ls[i+2],"3根k棒波峰最高價"]
+                    if self.top_def_ck1:
+                        if df.loc[top_ind_ls[i],"OSC"]>df.loc[top_ind_ls[i+2],"OSC"] and pre_high<now_high:
+                            df.loc[top_ind_ls[i+2],"訊號"] += "(不分正負)頂背離＆"
+                    if self.top_def_ck2:
+                        if df.loc[top_ind_ls[i],"OSC"]<df.loc[top_ind_ls[i+2],"OSC"] and pre_high>now_high:
+                            df.loc[top_ind_ls[i+2],"訊號"] += "(不分正負)頂背離＆"
             else:
                 break
         #讀取df_b每個row"OSC波峰波谷"，如果OSC跟最低價趨勢相反，紀錄底背離訊號在df
         for i in range(len(bot_ind_ls)-1):
             if bot_ck:
+                
+                if no_inverse_in_mid_check:
+                    temp_bool = [df.loc[temp_i,"OSC"]<=0 for temp_i in range(bot_ind_ls[i],bot_ind_ls[i+1]+1)]
+                    if not all(temp_bool):
+                        continue #如果中間翻正，不做以下的背離判斷
+                
                 pre_low = df.loc[bot_ind_ls[i],"3根k棒波谷最低價"]
                 now_low = df.loc[bot_ind_ls[i+1],"3根k棒波谷最低價"]
 
@@ -721,9 +765,23 @@ class mainwin(QtWidgets.QWidget):
                     if df.loc[bot_ind_ls[i],"OSC"]<df.loc[bot_ind_ls[i+1],"OSC"] and pre_low>now_low:
                         df.loc[bot_ind_ls[i+1],"訊號"] += "(不分正負)底背離＆"
                 if self.bot_def_ck2:
-                    #這個保留起來，放UI上提供選擇
                     if df.loc[bot_ind_ls[i],"OSC"]>df.loc[bot_ind_ls[i+1],"OSC"] and pre_low<now_low:
                         df.loc[bot_ind_ls[i+1],"訊號"] += "(不分正負)底背離＆"
+                if skip_reverse_check and i!=len(bot_ind_ls)-2:
+                    
+                    if no_inverse_in_mid_check:
+                        temp_bool = [df.loc[temp_i,"OSC"]<=0 for temp_i in range(bot_ind_ls[i],bot_ind_ls[i+2]+1)]
+                        if not all(temp_bool):
+                            continue #如果中間翻正，不做以下的背離判斷
+                    
+                    pre_low = df.loc[bot_ind_ls[i],"3根k棒波谷最低價"]
+                    now_low = df.loc[bot_ind_ls[i+2],"3根k棒波谷最低價"]
+                    if self.bot_def_ck1:
+                        if df.loc[bot_ind_ls[i],"OSC"]<df.loc[bot_ind_ls[i+2],"OSC"] and pre_low>now_low:
+                            df.loc[bot_ind_ls[i+2],"訊號"] += "(不分正負)底背離＆"
+                    if self.bot_def_ck2:
+                        if df.loc[bot_ind_ls[i],"OSC"]>df.loc[bot_ind_ls[i+2],"OSC"] and pre_low<now_low:
+                            df.loc[bot_ind_ls[i+2],"訊號"] += "(不分正負)底背離＆"
             else:
                 break
             
@@ -741,16 +799,34 @@ class mainwin(QtWidgets.QWidget):
             temp_df = df[df["正向頂背離"]]
             posi_top_ind_ls = temp_df.index.tolist()
             for i in range(len(posi_top_ind_ls)-1):
-                pre_high = df.loc[top_ind_ls[i],"3根k棒波峰最高價"]
-                now_high = df.loc[top_ind_ls[i+1],"3根k棒波峰最高價"]
+                
+                if no_inverse_in_mid_check:
+                    temp_bool = [df.loc[temp_i,"OSC"]>=0 for temp_i in range(posi_top_ind_ls[i],posi_top_ind_ls[i+1]+1)]
+                    if not all(temp_bool):
+                        continue #如果中間翻負，不做以下的背離判斷
+                
+                pre_high = df.loc[posi_top_ind_ls[i],"3根k棒波峰最高價"]
+                now_high = df.loc[posi_top_ind_ls[i+1],"3根k棒波峰最高價"]
                 
                 if self.posi_top_def_ck1:
                     if df.loc[posi_top_ind_ls[i],"OSC"]>df.loc[posi_top_ind_ls[i+1],"OSC"] and pre_high<now_high:
                             df.loc[posi_top_ind_ls[i+1],"訊號"] += "頂背離＆"
-                #TODO 之後要把另一個方向的趨勢背離加上
                 if self.posi_top_def_ck2:
                     if df.loc[posi_top_ind_ls[i],"OSC"]<df.loc[posi_top_ind_ls[i+1],"OSC"] and pre_high>now_high:
                             df.loc[posi_top_ind_ls[i+1],"訊號"] += "頂背離＆"
+                if skip_reverse_check and i!=len(posi_top_ind_ls)-2:
+                    if no_inverse_in_mid_check:
+                        temp_bool = [df.loc[temp_i,"OSC"]>=0 for temp_i in range(posi_top_ind_ls[i],posi_top_ind_ls[i+2]+1)]
+                        if not all(temp_bool):
+                            continue #如果中間翻負，不做以下的背離判斷
+                    pre_high = df.loc[posi_top_ind_ls[i],"3根k棒波峰最高價"]
+                    now_high = df.loc[posi_top_ind_ls[i+2],"3根k棒波峰最高價"]
+                    if self.top_def_ck1:
+                        if df.loc[posi_top_ind_ls[i],"OSC"]>df.loc[posi_top_ind_ls[i+2],"OSC"] and pre_high<now_high:
+                            df.loc[posi_top_ind_ls[i+2],"訊號"] += "頂背離＆"
+                    if self.top_def_ck2:
+                        if df.loc[posi_top_ind_ls[i],"OSC"]<df.loc[posi_top_ind_ls[i+2],"OSC"] and pre_high>now_high:
+                            df.loc[posi_top_ind_ls[i+2],"訊號"] += "頂背離＆"
             df.drop("正向頂背離",axis=1,inplace=True)
             
         if negative_bot_ck:
@@ -767,16 +843,32 @@ class mainwin(QtWidgets.QWidget):
             temp_df = df[df["負向底背離"]]
             nega_bot_ind_ls = temp_df.index.tolist()
             for i in range(len(nega_bot_ind_ls)-1):
+                if no_inverse_in_mid_check:
+                        temp_bool = [df.loc[temp_i,"OSC"]<=0 for temp_i in range(nega_bot_ind_ls[i],nega_bot_ind_ls[i+1]+1)]
+                        if not all(temp_bool):
+                            continue #如果中間翻正，不做以下的背離判斷
                 pre_low = df.loc[nega_bot_ind_ls[i],"3根k棒波谷最低價"]
                 now_low = df.loc[nega_bot_ind_ls[i+1],"3根k棒波谷最低價"]
                 
                 if self.nega_bot_def_ck1:
                     if df.loc[nega_bot_ind_ls[i],"OSC"]<df.loc[nega_bot_ind_ls[i+1],"OSC"] and pre_low>now_low:
                             df.loc[nega_bot_ind_ls[i+1],"訊號"] += "底背離＆"
-                #TODO 之後要把另一個方向的趨勢背離加上
                 if self.nega_bot_def_ck2:
                     if df.loc[nega_bot_ind_ls[i],"OSC"]>df.loc[nega_bot_ind_ls[i+1],"OSC"] and pre_low<now_low:
                             df.loc[nega_bot_ind_ls[i+1],"訊號"] += "底背離＆"
+                if skip_reverse_check and i!=len(nega_bot_ind_ls)-2:
+                    if no_inverse_in_mid_check:
+                        temp_bool = [df.loc[temp_i,"OSC"]<=0 for temp_i in range(nega_bot_ind_ls[i],nega_bot_ind_ls[i+2]+1)]
+                        if not all(temp_bool):
+                            continue #如果中間翻正，不做以下的背離判斷
+                    pre_low = df.loc[nega_bot_ind_ls[i],"3根k棒波谷最低價"]
+                    now_low = df.loc[nega_bot_ind_ls[i+2],"3根k棒波谷最低價"]
+                    if self.bot_def_ck1:
+                        if df.loc[nega_bot_ind_ls[i],"OSC"]<df.loc[nega_bot_ind_ls[i+2],"OSC"] and pre_low>now_low:
+                            df.loc[nega_bot_ind_ls[i+2],"訊號"] += "底背離＆"
+                    if self.bot_def_ck2:
+                        if df.loc[nega_bot_ind_ls[i],"OSC"]>df.loc[nega_bot_ind_ls[i+2],"OSC"] and pre_low<now_low:
+                            df.loc[nega_bot_ind_ls[i+2],"訊號"] += "底背離＆"
             df.drop("負向底背離",axis=1,inplace=True)
             
         # 20250324 要先把背離的訊號往後移一天，再判斷止損
@@ -820,6 +912,60 @@ class mainwin(QtWidgets.QWidget):
         
         #回傳df
         return df
+    
+    def is_time_in_allowed_periods(self,time_str):
+        """
+        檢查給定的日期時間是否在允許的時間段內
+        
+        參數:
+        date_str (str): 日期字符串，格式為 'YYYY/MM/DD'
+        time_str (str): 時間字符串，格式為 'HH:MM:SS'
+        
+        返回:
+        bool: 如果時間在允許的時間段內，則返回True，否則返回False
+        """
+        # 提取時間部分
+        hour, minute, second = map(int, time_str.split(':'))
+        
+        # 將時間轉換為分鐘，便於比較
+        time_in_minutes = hour * 60 + minute
+        
+        # 定義允許的時間段（以分鐘為單位）
+        period1_start = 8 * 60 + 45   # 08:45
+        period1_end = 11 * 60         # 11:00
+        
+        period2_start = 15 * 60       # 15:00
+        period2_end = 17 * 60    # 17:00
+        
+        period3_start = 19 * 60 + 30  # 19:30
+        period3_end = 24 * 60    # 00:00 第二天，轉換為分鐘是 24*60
+        
+        # 檢查時間是否在任一允許的時間段內
+        if period1_start <= time_in_minutes <= period1_end:
+            return True
+        elif period2_start <= time_in_minutes <= period2_end:
+            return True
+        elif period3_start <= time_in_minutes or time_in_minutes <= (period3_end - 24 * 60):
+            # 特殊處理跨午夜的情況
+            # 如果時間 >= 19:30 或 時間 <= 00:00，則在第三個時間段內
+            return True
+        else:
+            return False
+
+    def checkTimeInSlots(self,time_str):
+        allowed_ranges = [
+            {"start": "08:45:00", "end": "11:00:00"},
+            {"start": "15:00:00", "end": "17:00:00"},
+            {"start": "19:30:00", "end": "00:00:00"}  # 跨午夜的時間段
+        ]
+        for slot in allowed_ranges:
+            if slot["end"]<slot["start"]:
+                allowed_ranges.append({"start": "00:00:00", "end": slot["end"]})
+                slot["end"] = "23:59:59"
+        for slot in allowed_ranges:
+            if time_str >= slot["start"] and time_str <= slot["end"]:
+                return True
+        return False
 
     def decide_position(self,df:pd.DataFrame)->pd.DataFrame:
         """
@@ -835,12 +981,21 @@ class mainwin(QtWidgets.QWidget):
         pos_ls = []
         open_record = []
         for i in df.index.tolist():
+            
             if df.loc[i,"訊號"] == "頂背離止損" or df.loc[i,"訊號"] == "底背離止損":
                 if pos != 0:
                     pos = 0
-                pos_ls.append(pos)
-                open_record.append(True)
+                    pos_ls.append(pos)
+                    open_record.append(True)
+                else:
+                    pos_ls.append(pos)
+                    open_record.append(False)
+                continue
             elif "頂背離" in df.loc[i,"訊號"]:
+                if enter_time_check and not self.checkTimeInSlots(df.loc[i+1,"時間區間"].split('~')[0]):
+                    pos_ls.append(pos)
+                    open_record.append(False)
+                    continue
                 if pos > 0:
                     pos = -1*pos
                 elif pos == 0:
@@ -848,6 +1003,10 @@ class mainwin(QtWidgets.QWidget):
                 pos_ls.append(pos)
                 open_record.append(True)
             elif "底背離" in df.loc[i,"訊號"]:
+                if enter_time_check and not self.checkTimeInSlots(df.loc[i+1,"時間區間"].split('~')[0]):
+                    pos_ls.append(pos)
+                    open_record.append(False)
+                    continue
                 if pos < 0:
                     pos = -1*pos
                 elif pos == 0:
@@ -944,6 +1103,14 @@ class mainwin(QtWidgets.QWidget):
                     actionStr = "買進"
                 #交易指令
                 signal_content = df.loc[i,"訊號"][:-1] if df.loc[i,"訊號"][-1] == "＆" else df.loc[i,"訊號"]
+                #先用split將＆相連的字串分開
+                signal_content_strlist = signal_content.split("＆")
+                #將重複的字串只留下一個
+                signal_content = ""
+                for content in signal_content_strlist:
+                    if content not in signal_content:
+                        signal_content += content + "＆"
+                signal_content = signal_content[:-1]
                 signal_data.append([f"{str(datetime.datetime.now()).split(' ')[1][:-3]}","台股指數近月","交易指令",
                                     f"實際部位:{df.loc[i,'position']} 目標部位:{df.loc[next_i,'position']} 價格：市價 (訊號：{signal_content})"])
                 #回測成交
@@ -1080,6 +1247,598 @@ class mainwin(QtWidgets.QWidget):
         # 回傳debt_ls的最大值
         return round(max(debt_ls),2)
     
+    def one_hour_backtest(self):
+        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit,skip_reverse_check,no_inverse_in_mid_check,enter_time_check
+        df = pd.read_excel('小時k.xlsx') #TODO 之後df需要在回測前更新沒有的資料
+        warning_ls = self.checkParam()
+        if warning_ls:
+            warning_str = ""
+            for s in warning_ls: warning_str+=s
+            self._info = QtWidgets.QMessageBox(self)
+            self._info.information(self,"警告",warning_str)
+            return
+        start_date = self.date_val_1.date().toString(QtCore.Qt.ISODate)
+        end_date = self.date_val_2.date().toString(QtCore.Qt.ISODate)
+        #這次也不需要往前抓，因為往前抓是為了算OSC，資料已經計算好OSC了。
+        #data_start_date = self.date_val_1.date().addDays(-3).toString(QtCore.Qt.ISODate)
+        #這次不往後抓，因為osc是往前抓資料算出來的
+        #data_end_date = self.date_val_2.date().addMonths(3).toString(QtCore.Qt.ISODate)
+        #data_end_date = end_date #TODO 之後UI的結束日期預設要改成資料最晚日期
+        top_ck = self.tacticCheckbtn1.isChecked()
+        top_stop_ck = self.tacticCheckbtn2.isChecked()
+        bot_ck = self.tacticCheckbtn3.isChecked()
+        bot_stop_ck = self.tacticCheckbtn4.isChecked()
+        positive_top_ck = self.tacticCheckbtn5.isChecked()
+        negative_bot_ck = self.tacticCheckbtn6.isChecked()
+        osc_ratio_limit = self.tacticCheckbtn7.isChecked()
+        skip_reverse_check = self.skip_reverse.isChecked()
+        no_inverse_in_mid_check = self.no_inverse_in_middle.isChecked()
+        enter_time_check = self.enter_time_limits.isChecked()
+        
+        
+        # 這裡需要提醒什麼都沒勾，但沒勾照樣是可以測
+        reply = ""
+        if  not any([top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit]) :
+            self._info = QtWidgets.QMessageBox(self)
+            reply = self._info.question(self,"提醒","未設定任何策略，確定進行回測?",
+                                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, 
+                                        QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.No:
+            return
+        #小時k資料已經整理為近月、小時k資料
+        #df = self.get_TX_data(data_start_date,data_end_date,"TX")
+        #df = self.clean_Constract_Date(df)
+        #df = self.get_1TF(df)
+        #df = self.get_daliy_k_bar_range(df,data_start_date,data_end_date)
+        #df = self.getMACD_OSC(df)
+        #原先日k是要多少取多少資料，現在是要從三年資料裡取用資料段
+        #因為回測是要從開始投資那天開始計算
+        df = df[(df["日期"]>pd.to_datetime(start_date)) & (df["日期"]<pd.to_datetime(end_date))]
+        df.reset_index(inplace=True,drop=True)
+        df = self.find_pos(df)
+        df = self.read_position(df)
+        df = self.decide_position(df)
+        df = self.getIncome(df)
+        df["訊號"] = [s[:-1] if s and s[-1] == "＆" else s for s in df["訊號"]]
+        df = df[(df["日期"]>pd.to_datetime(start_date)) & (df["日期"]<pd.to_datetime(end_date))]
+        
+        self._info = QtWidgets.QMessageBox(self)
+        self._info.information(self,"訊息",f'已完成 小時k 回測 !!!')
+        
+        signal_df,trade_df = self.getReportTable(df)
+        
+        self.RecordTable_1 = QtWidgets.QTableWidget(self)
+        self.RecordTable_1.setColumnCount(len(signal_df.columns.tolist()))
+        self.RecordTable_1.setHorizontalHeaderLabels(signal_df.columns.tolist())
+        columns = signal_df.columns.tolist()
+        for r in range(len(signal_df)):
+            temp_row = self.RecordTable_1.rowCount()
+            self.RecordTable_1.insertRow(temp_row)
+            for c in columns:
+                tempItem = QtWidgets.QTableWidgetItem(str(signal_df.loc[r,c]))
+                self.RecordTable_1.setItem(temp_row,columns.index(c),tempItem)
+        #self.putDfToTableUI(signal_df)
+        #self.tabwid = QtWidgets.QTabWidget(self)
+        self.tab_signal_df_wid = QtWidgets.QWidget(self)
+        self.tab_layout_1 = QtWidgets.QVBoxLayout(self.tab_signal_df_wid)
+        self.tab_layout_1.addWidget(self.RecordTable_1)
+        #self.tabwid.addTab(self.tab_signal_df_wid,"策略交易明細")
+        
+        self.RecordTable_2 = QtWidgets.QTableWidget(self)
+        self.RecordTable_2.setColumnCount(len(trade_df.columns.tolist()))
+        self.RecordTable_2.setHorizontalHeaderLabels(trade_df.columns.tolist())
+        columns = trade_df.columns.tolist()
+        for r in range(len(trade_df)):
+            temp_row = self.RecordTable_2.rowCount()
+            self.RecordTable_2.insertRow(temp_row)
+            for c in columns:
+                tempItem = QtWidgets.QTableWidgetItem(str(trade_df.loc[r,c]))
+                self.RecordTable_2.setItem(temp_row,columns.index(c),tempItem)
+        #self.putDfToTableUI(trade_df)
+        #self.tabwid = QtWidgets.QTabWidget(self)
+        self.tab_trade_df_wid = QtWidgets.QWidget(self)
+        self.tab_layout_2 = QtWidgets.QVBoxLayout(self.tab_trade_df_wid)
+        self.tab_layout_2.addWidget(self.RecordTable_2)
+        #self.tabwid.addTab(self.tab_trade_df_wid,"買賣交易明細")
+        
+        self.RecordTable_3 = QtWidgets.QTableWidget(self)
+        self.RecordTable_3.setColumnCount(len(df.columns.tolist()))
+        self.RecordTable_3.setHorizontalHeaderLabels(df.columns.tolist())
+        columns = df.columns.tolist()
+        for r in df.index.tolist():
+            temp_row = self.RecordTable_3.rowCount()
+            self.RecordTable_3.insertRow(temp_row)
+            for c in columns:
+                tempItem = QtWidgets.QTableWidgetItem(str(df.loc[r,c]))
+                self.RecordTable_3.setItem(temp_row,columns.index(c),tempItem)
+        #self.putDfToTableUI(trade_df)
+        #self.tabwid = QtWidgets.QTabWidget(self)
+        self.df_wid = QtWidgets.QWidget(self)
+        self.tab_layout_3 = QtWidgets.QVBoxLayout(self.df_wid)
+        self.tab_layout_3.addWidget(self.RecordTable_3)
+        #self.tabwid.addTab(self.df_wid,"總表")
+        
+        time_now = datetime.datetime.now()
+        
+        sample_texts = [f"小時k_策略交易明細{str(time_now)[11:19]}",f"小時k_買賣交易明細{str(time_now)[11:19]}",f"小時k_總表{str(time_now)[11:19]}"]
+        for text in sample_texts:
+            self.text_list.addItem(text)
+        
+        # 連接列表的點擊信號
+        self.text_list.itemClicked.connect(self.add_new_table_tab)
+        self.df_dict[f"小時k_策略交易明細{str(time_now)[11:19]}"] = signal_df
+        self.df_dict[f"小時k_買賣交易明細{str(time_now)[11:19]}"] = trade_df
+        self.df_dict[f"小時k_總表{str(time_now)[11:19]}"] = df
+        #損益歷史加入表格
+        cols = ["時間級別","淨利($)","淨利(%)","平均獲利\n虧損比($)","平均獲利\n虧損比(%)","最大區間虧損($)","最大區間虧損(%)"]
+        vals = ["小時k",self.getNetIncome(df),self.getNetIncomePercent(trade_df),self.getIncomeRatio(df),self.getIncomePercentRatio(trade_df),self.getIntervalDebt(trade_df),self.getIntervalPercentDebt(trade_df)]
+        temp_row = self.RecordTable.rowCount()
+        self.RecordTable.insertRow(temp_row)
+        for i in range(len(cols)):
+            tempItem = QtWidgets.QTableWidgetItem(str(vals[i]))
+            self.RecordTable.setItem(temp_row,i,tempItem)
+        
+        if self.his_df.loc[0,"淨利($)"] != "":
+            self.his_df.loc[len(self.his_df)] = vals
+        else:
+            self.his_df = pd.DataFrame(data = [vals],columns=cols)
+        self.df_dict["損益歷史紀錄"] = self.his_df
+    
+    def quanter_backtest(self):
+        global top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit,skip_reverse_check,no_inverse_in_mid_check,enter_time_check
+        df = pd.read_excel('15分k.xlsx') #TODO 之後df需要在回測前更新沒有的資料
+        warning_ls = self.checkParam()
+        if warning_ls:
+            warning_str = ""
+            for s in warning_ls: warning_str+=s
+            self._info = QtWidgets.QMessageBox(self)
+            self._info.information(self,"警告",warning_str)
+            return
+        start_date = self.date_val_1.date().toString(QtCore.Qt.ISODate)
+        end_date = self.date_val_2.date().toString(QtCore.Qt.ISODate)
+        #這次也不需要往前抓，因為往前抓是為了算OSC，資料已經計算好OSC了。
+        #data_start_date = self.date_val_1.date().addDays(-3).toString(QtCore.Qt.ISODate)
+        #這次不往後抓，因為osc是往前抓資料算出來的
+        #data_end_date = self.date_val_2.date().addMonths(3).toString(QtCore.Qt.ISODate)
+        #data_end_date = end_date #TODO 之後UI的結束日期預設要改成資料最晚日期
+        top_ck = self.tacticCheckbtn1.isChecked()
+        top_stop_ck = self.tacticCheckbtn2.isChecked()
+        bot_ck = self.tacticCheckbtn3.isChecked()
+        bot_stop_ck = self.tacticCheckbtn4.isChecked()
+        positive_top_ck = self.tacticCheckbtn5.isChecked()
+        negative_bot_ck = self.tacticCheckbtn6.isChecked()
+        osc_ratio_limit = self.tacticCheckbtn7.isChecked()
+        skip_reverse_check = self.skip_reverse.isChecked()
+        no_inverse_in_mid_check = self.no_inverse_in_middle.isChecked()
+        enter_time_check = self.enter_time_limits.isChecked()
+        
+        
+        # 這裡需要提醒什麼都沒勾，但沒勾照樣是可以測
+        reply = ""
+        if  not any([top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit]) :
+            self._info = QtWidgets.QMessageBox(self)
+            reply = self._info.question(self,"提醒","未設定任何策略，確定進行回測?",
+                                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, 
+                                        QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.No:
+            return
+        #小時k資料已經整理為近月、小時k資料
+        #df = self.get_TX_data(data_start_date,data_end_date,"TX")
+        #df = self.clean_Constract_Date(df)
+        #df = self.get_1TF(df)
+        #df = self.get_daliy_k_bar_range(df,data_start_date,data_end_date)
+        #df = self.getMACD_OSC(df)
+        #原先日k是要多少取多少資料，現在是要從三年資料裡取用資料段
+        #因為回測是要從開始投資那天開始計算
+        df = df[(df["日期"]>pd.to_datetime(start_date)) & (df["日期"]<pd.to_datetime(end_date))]
+        df.reset_index(inplace=True,drop=True)
+        df = self.find_pos(df)
+        df = self.read_position(df)
+        df = self.decide_position(df)
+        df = self.getIncome(df)
+        df["訊號"] = [s[:-1] if s and s[-1] == "＆" else s for s in df["訊號"]]
+        df = df[(df["日期"]>pd.to_datetime(start_date)) & (df["日期"]<pd.to_datetime(end_date))]
+        
+        self._info = QtWidgets.QMessageBox(self)
+        self._info.information(self,"訊息",f'已完成 15分k 回測 !!!')
+        
+        signal_df,trade_df = self.getReportTable(df)
+        
+        self.RecordTable_1 = QtWidgets.QTableWidget(self)
+        self.RecordTable_1.setColumnCount(len(signal_df.columns.tolist()))
+        self.RecordTable_1.setHorizontalHeaderLabels(signal_df.columns.tolist())
+        columns = signal_df.columns.tolist()
+        for r in range(len(signal_df)):
+            temp_row = self.RecordTable_1.rowCount()
+            self.RecordTable_1.insertRow(temp_row)
+            for c in columns:
+                tempItem = QtWidgets.QTableWidgetItem(str(signal_df.loc[r,c]))
+                self.RecordTable_1.setItem(temp_row,columns.index(c),tempItem)
+        #self.putDfToTableUI(signal_df)
+        #self.tabwid = QtWidgets.QTabWidget(self)
+        self.tab_signal_df_wid = QtWidgets.QWidget(self)
+        self.tab_layout_1 = QtWidgets.QVBoxLayout(self.tab_signal_df_wid)
+        self.tab_layout_1.addWidget(self.RecordTable_1)
+        #self.tabwid.addTab(self.tab_signal_df_wid,"策略交易明細")
+        
+        self.RecordTable_2 = QtWidgets.QTableWidget(self)
+        self.RecordTable_2.setColumnCount(len(trade_df.columns.tolist()))
+        self.RecordTable_2.setHorizontalHeaderLabels(trade_df.columns.tolist())
+        columns = trade_df.columns.tolist()
+        for r in range(len(trade_df)):
+            temp_row = self.RecordTable_2.rowCount()
+            self.RecordTable_2.insertRow(temp_row)
+            for c in columns:
+                tempItem = QtWidgets.QTableWidgetItem(str(trade_df.loc[r,c]))
+                self.RecordTable_2.setItem(temp_row,columns.index(c),tempItem)
+        #self.putDfToTableUI(trade_df)
+        #self.tabwid = QtWidgets.QTabWidget(self)
+        self.tab_trade_df_wid = QtWidgets.QWidget(self)
+        self.tab_layout_2 = QtWidgets.QVBoxLayout(self.tab_trade_df_wid)
+        self.tab_layout_2.addWidget(self.RecordTable_2)
+        #self.tabwid.addTab(self.tab_trade_df_wid,"買賣交易明細")
+        
+        self.RecordTable_3 = QtWidgets.QTableWidget(self)
+        self.RecordTable_3.setColumnCount(len(df.columns.tolist()))
+        self.RecordTable_3.setHorizontalHeaderLabels(df.columns.tolist())
+        columns = df.columns.tolist()
+        for r in df.index.tolist():
+            temp_row = self.RecordTable_3.rowCount()
+            self.RecordTable_3.insertRow(temp_row)
+            for c in columns:
+                tempItem = QtWidgets.QTableWidgetItem(str(df.loc[r,c]))
+                self.RecordTable_3.setItem(temp_row,columns.index(c),tempItem)
+        #self.putDfToTableUI(trade_df)
+        #self.tabwid = QtWidgets.QTabWidget(self)
+        self.df_wid = QtWidgets.QWidget(self)
+        self.tab_layout_3 = QtWidgets.QVBoxLayout(self.df_wid)
+        self.tab_layout_3.addWidget(self.RecordTable_3)
+        #self.tabwid.addTab(self.df_wid,"總表")
+        
+        time_now = datetime.datetime.now()
+        
+        sample_texts = [f"15分k_策略交易明細{str(time_now)[11:19]}",f"15分k_買賣交易明細{str(time_now)[11:19]}",f"15分k_總表{str(time_now)[11:19]}"]
+        for text in sample_texts:
+            self.text_list.addItem(text)
+        
+        # 連接列表的點擊信號
+        self.text_list.itemClicked.connect(self.add_new_table_tab)
+        self.df_dict[f"15分k_策略交易明細{str(time_now)[11:19]}"] = signal_df
+        self.df_dict[f"15分k_買賣交易明細{str(time_now)[11:19]}"] = trade_df
+        self.df_dict[f"15分k_總表{str(time_now)[11:19]}"] = df
+        #損益歷史加入表格
+        cols = ["時間級別","淨利($)","淨利(%)","平均獲利\n虧損比($)","平均獲利\n虧損比(%)","最大區間虧損($)","最大區間虧損(%)"]
+        vals = ["15分k",self.getNetIncome(df),self.getNetIncomePercent(trade_df),self.getIncomeRatio(df),self.getIncomePercentRatio(trade_df),self.getIntervalDebt(trade_df),self.getIntervalPercentDebt(trade_df)]
+        temp_row = self.RecordTable.rowCount()
+        self.RecordTable.insertRow(temp_row)
+        for i in range(len(cols)):
+            tempItem = QtWidgets.QTableWidgetItem(str(vals[i]))
+            self.RecordTable.setItem(temp_row,i,tempItem)
+        
+        if self.his_df.loc[0,"淨利($)"] != "":
+            self.his_df.loc[len(self.his_df)] = vals
+        else:
+            self.his_df = pd.DataFrame(data = [vals],columns=cols)
+        self.df_dict["損益歷史紀錄"] = self.his_df
+    
+    def split_data_by_time_ranges_15min(self, df, time_column='time'):
+        """
+        將資料按照指定的時間範圍分割
+        """
+        # 確保時間欄位是datetime格式
+        df['time_obj'] = pd.to_datetime(df[time_column], format='%H:%M:%S').dt.time
+        
+        # 定義兩個大的時間範圍
+        range1_start = DT.strptime('00:00:00', '%H:%M:%S').time()
+        range1_end = DT.strptime('05:00:00', '%H:%M:%S').time()
+        
+        range2_start = DT.strptime('08:45:00', '%H:%M:%S').time()
+        range2_end = DT.strptime('13:45:00', '%H:%M:%S').time()
+        
+        range3_start = DT.strptime('15:00:00', '%H:%M:%S').time()
+        range3_end = DT.strptime('00:00:00', '%H:%M:%S').time()
+        
+        # 創建空字典來存儲結果
+        result_parts = {
+            'part1': [],  # 00:00 - 05:00
+            'part2': [],   # 08:45 - 13:45
+            'part3': []   # 15:00 - 00:00
+        }
+        
+        # 創建小時間範圍的空列表
+        #result_hourly = []
+        result_every15min = []
+        time_tick = []
+        
+        # 處理第一個時間範圍 (00:00 - 05:00)
+        current_time = range1_start
+        for i in range(20):  # 5小時*4個15分鐘 = 20
+            next_time = self.add_15min_to_time(current_time)
+            time_tick.append(f"{current_time}~{next_time}")
+            # 為跨小時的時間範圍篩選資料
+            if current_time < next_time:
+                mask = (df['time_obj'] >= current_time) & (df['time_obj'] < next_time)
+            else:  # 處理跨夜情況
+                mask = (df['time_obj'] >= current_time) | (df['time_obj'] < next_time)
+            
+            # 存儲這一小時的資料
+            every_15min_data = df[mask].copy()
+            result_every15min.append(every_15min_data)
+            #result_parts['part1'].append(hourly_data)
+            
+            # 更新下一個時間範圍的起始時間
+            current_time = next_time
+        
+        # 處理第二個時間範圍 (8:45 - 13:45)
+        current_time = range2_start
+        for i in range(20):  # 5小時*4個15分鐘 = 20
+            next_time = self.add_15min_to_time(current_time)
+            time_tick.append(f"{current_time}~{next_time}")
+            # 為跨小時的時間範圍篩選資料
+            if current_time < next_time:
+                mask = (df['time_obj'] >= current_time) & (df['time_obj'] < next_time)
+            else:  # 處理跨夜情況
+                mask = (df['time_obj'] >= current_time) | (df['time_obj'] < next_time)
+            
+            # 存儲這一小時的資料
+            every_15min_data = df[mask].copy()
+            result_every15min.append(every_15min_data)
+            #result_parts['part2'].append(hourly_data)
+            
+            # 更新下一個時間範圍的起始時間
+            current_time = next_time
+        
+        # 處理第三個時間範圍 (15:00 - 00:00)
+        current_time = range3_start
+        for i in range(36):  # 9小時*4個15分鐘 = 36
+            next_time = self.add_15min_to_time(current_time)
+            time_tick.append(f"{current_time}~{next_time}")
+            # 為跨小時的時間範圍篩選資料
+            if current_time < next_time:
+                mask = (df['time_obj'] >= current_time) & (df['time_obj'] < next_time)
+            else:  # 處理跨夜情況
+                mask = (df['time_obj'] >= current_time) | (df['time_obj'] < next_time)
+            
+            # 存儲這一小時的資料
+            every_15min_data = df[mask].copy()
+            result_every15min.append(every_15min_data)
+            #result_parts['part3'].append(hourly_data)
+            
+            # 更新下一個時間範圍的起始時間
+            current_time = next_time
+        
+        return result_every15min, time_tick
+
+    def split_data_by_time_ranges_hour(self, df, time_column='time'):
+        """
+        將資料按照指定的時間範圍分割
+        """
+        # 確保時間欄位是datetime格式
+        df['time_obj'] = pd.to_datetime(df[time_column], format='%H:%M:%S').dt.time
+        
+        # 定義兩個大的時間範圍
+        range1_start = DT.strptime('00:00:00', '%H:%M:%S').time()
+        range1_end = DT.strptime('05:00:00', '%H:%M:%S').time()
+        
+        range2_start = DT.strptime('08:45:00', '%H:%M:%S').time()
+        range2_end = DT.strptime('13:45:00', '%H:%M:%S').time()
+        
+        range3_start = DT.strptime('15:00:00', '%H:%M:%S').time()
+        range3_end = DT.strptime('00:00:00', '%H:%M:%S').time()
+        
+        # 創建空字典來存儲結果
+        result_parts = {
+            'part1': [],  # 00:00 - 05:00
+            'part2': [],   # 08:45 - 13:45
+            'part3': []   # 15:00 - 00:00
+        }
+        
+        # 創建小時間範圍的空列表
+        result_hourly = []
+        time_tick = []
+        
+        # 處理第一個時間範圍 (00:00 - 05:00)
+        current_time = range1_start
+        for i in range(5):  # 5小時
+            next_time = self.add_hour_to_time(current_time)
+            time_tick.append(f"{current_time}~{next_time}")
+            # 為跨小時的時間範圍篩選資料
+            if current_time < next_time:
+                mask = (df['time_obj'] >= current_time) & (df['time_obj'] < next_time)
+            else:  # 處理跨夜情況
+                mask = (df['time_obj'] >= current_time) | (df['time_obj'] < next_time)
+            
+            # 存儲這一小時的資料
+            hourly_data = df[mask].copy()
+            result_hourly.append(hourly_data)
+            result_parts['part1'].append(hourly_data)
+            
+            # 更新下一個時間範圍的起始時間
+            current_time = next_time
+        
+        # 處理第二個時間範圍 (8:45 - 13:45)
+        current_time = range2_start
+        for i in range(5):  # 5小時
+            next_time = self.add_hour_to_time(current_time)
+            time_tick.append(f"{current_time}~{next_time}")
+            # 為跨小時的時間範圍篩選資料
+            if current_time < next_time:
+                mask = (df['time_obj'] >= current_time) & (df['time_obj'] < next_time)
+            else:  # 處理跨夜情況
+                mask = (df['time_obj'] >= current_time) | (df['time_obj'] < next_time)
+            
+            # 存儲這一小時的資料
+            hourly_data = df[mask].copy()
+            result_hourly.append(hourly_data)
+            result_parts['part2'].append(hourly_data)
+            
+            # 更新下一個時間範圍的起始時間
+            current_time = next_time
+        
+        # 處理第三個時間範圍 (15:00 - 00:00)
+        current_time = range3_start
+        for i in range(9):  # 9小時
+            next_time = self.add_hour_to_time(current_time)
+            time_tick.append(f"{current_time}~{next_time}")
+            # 為跨小時的時間範圍篩選資料
+            if current_time < next_time:
+                mask = (df['time_obj'] >= current_time) & (df['time_obj'] < next_time)
+            else:  # 處理跨夜情況
+                mask = (df['time_obj'] >= current_time) | (df['time_obj'] < next_time)
+            
+            # 存儲這一小時的資料
+            hourly_data = df[mask].copy()
+            result_hourly.append(hourly_data)
+            result_parts['part3'].append(hourly_data)
+            
+            # 更新下一個時間範圍的起始時間
+            current_time = next_time
+        
+        return result_parts, result_hourly, time_tick
+
+    def add_hour_to_time(self,time_obj):
+        """
+        將時間增加一小時，處理跨夜情況
+        """
+        dt = DT.combine(DT.today(), time_obj) + timedelta(hours=1)
+        return dt.time()
+
+    def add_15min_to_time(self,time_obj):
+        """
+        將時間增加15分鐘，處理跨夜情況
+        """
+        dt = DT.combine(DT.today(), time_obj) + timedelta(minutes=15)
+        return dt.time()
+
+    def updateData(self):
+        api = DataLoader()
+        with open("token_.txt") as token_file:
+            token = token_file.read()
+
+        api.login_by_token(api_token=token)
+        
+        df_hour_k = pd.read_excel("小時k.xlsx")
+        df_15min_k = pd.read_excel("15分k.xlsx")
+        #檢查日期是否有到今天
+        now_date = DT.today()
+        now_date = now_date.strftime("%Y-%m-%d")
+        hour_k_date = df_hour_k["日期"].iloc[-1].strftime("%Y-%m-%d")
+        min_k_date = df_15min_k["日期"].iloc[-1].strftime("%Y-%m-%d")
+        if hour_k_date < now_date or min_k_date < now_date:
+            ## 先產生日期list，格式yyyy-mm-dd
+            start_date = hour_k_date if hour_k_date<min_k_date else min_k_date
+            end_date = now_date#"#datetime.today().strftime("%Y-%m-%d")
+            date_ls = pd.date_range(start_date,end_date).strftime("%Y-%m-%d").tolist()
+            ## 使用 期貨交易明細 API
+            all_df_hour_ls = []
+            all_df_15min_ls = []
+            for date in date_ls:
+                #抓資料
+                df = api.taiwan_futures_tick(
+                futures_id='TX',
+                date=date
+                )
+                if df.empty:
+                    continue
+                df["日期"] = pd.to_datetime(df["date"].str.split(" ").str[0])
+                df["日期"] = pd.to_datetime(df["日期"],format="%Y-%m-%d").dt.date
+                df["time"] = df["date"].str.split(" ").str[1]
+                df["time"] = pd.to_datetime(df["time"],format="%H:%M:%S").dt.time
+                #取得近月資料
+                df = self.clean_Constract_Date(df)
+                df = self.get_1TF(df)
+                
+                #取得以小時為間隔的資料
+                result_parts, result_hourly, time_ticks = self.split_data_by_time_ranges_hour(df)
+
+                new_data = []
+                ind = 0
+                for temp_df in result_hourly:
+                    temp_data = []
+                    if temp_df.empty:
+                        ind+=1
+                        print("該時段無交易")
+                        continue
+                    temp_data.append(temp_df["日期"].iloc[0])
+                    temp_data.append(time_ticks[ind])
+                    temp_data.append(temp_df["price"].iloc[0])
+                    temp_data.append(temp_df["price"].max())
+                    temp_data.append(temp_df["price"].min())
+                    temp_data.append(temp_df["price"].iloc[-1])
+                    #temp_data.append(len(temp_df))
+                    #temp_data.append(temp_df["volume"].sum())
+                    #temp_data.append(round(temp_df["volume"].sum()/1000))
+                    #print(temp_data)
+                    new_data.append(temp_data)
+                    ind+=1
+                #new_df = pd.DataFrame(new_data,columns=["時間","開盤價","收盤價","最高價","最低價","成交筆數","成交量(股)","成交量(張)"])
+                new_df = pd.DataFrame(new_data,columns=["日期","時間區間","Open","High","Low","Close"])
+                print(new_df)
+                all_df_hour_ls.append(new_df)
+                print("="*50)
+                
+                #取得以15分為間隔的資料
+                result_per15min, time_ticks = self.split_data_by_time_ranges_15min(df)
+
+                new_data = []
+                ind = 0
+                for temp_df in result_per15min:
+                    temp_data = []
+                    if temp_df.empty:
+                        ind+=1
+                        print("該時段無交易")
+                        continue
+                    temp_data.append(temp_df["日期"].iloc[0])
+                    temp_data.append(time_ticks[ind])
+                    temp_data.append(temp_df["price"].iloc[0])
+                    temp_data.append(temp_df["price"].max())
+                    temp_data.append(temp_df["price"].min())
+                    temp_data.append(temp_df["price"].iloc[-1])
+                    #temp_data.append(len(temp_df))
+                    #temp_data.append(temp_df["volume"].sum())
+                    #temp_data.append(round(temp_df["volume"].sum()/1000))
+                    #print(temp_data)
+                    new_data.append(temp_data)
+                    ind+=1
+                new_df = pd.DataFrame(new_data,columns=["日期","時間區間","Open","High","Low","Close"])
+                print(new_df)
+                all_df_15min_ls.append(new_df)
+                print("="*50)
+                
+            all_df_hour = pd.concat(all_df_hour_ls,axis=0)
+            print(all_df_hour.info())
+            df_hour = all_df_hour.copy()
+            #取舊資料的倒數三天份與新資料concat
+            df_hour_k = df_hour_k[df_hour_k["日期"]<start_date]
+            df_hour_k_last3days = df_hour_k.iloc[-60:]
+            temp_hour_df = pd.concat([df_hour_k_last3days,df_hour],axis=0)
+            temp_hour_df.reset_index(inplace=True,drop=True)
+            temp_hour_df = self.getMACD_OSC(temp_hour_df)
+            print(df.info())
+            temp_hour_df = temp_hour_df[temp_hour_df["日期"]>=start_date]
+            df_hour_k_new = pd.concat([df_hour_k,temp_hour_df],axis=0)
+            df_hour_k_new.reset_index(inplace=True,drop=True)
+            print(df_hour_k_new.info())
+            df_hour_k_new.to_excel("小時k.xlsx",index=False)
+            
+            all_df_15min = pd.concat(all_df_15min_ls,axis=0)
+            print(all_df_15min.info())
+            df_15min = all_df_15min.copy()
+            #取舊資料的倒數三天份與新資料concat
+            df_15min_k = df_15min_k[df_15min_k["日期"]<start_date]
+            df_15min_k_last3days = df_15min_k.iloc[-60:]
+            temp_15min_df = pd.concat([df_15min_k_last3days,df_15min],axis=0)
+            temp_15min_df.reset_index(inplace=True,drop=True)
+            temp_15min_df = self.getMACD_OSC(temp_15min_df)
+            print(df.info())
+            temp_15min_df = temp_15min_df[temp_15min_df["日期"]>=start_date]
+            df_15min_k_new = pd.concat([df_15min_k,temp_15min_df],axis=0)
+            df_15min_k_new.reset_index(inplace=True,drop=True)
+            print(df_15min_k_new.info())
+            df_15min_k_new.to_excel("15分k.xlsx",index=False)
+        else:
+            return
+    
     def checkParam(self):
         Warning_ls = []
         start_date = self.date_val_1.date()
@@ -1098,7 +1857,15 @@ class mainwin(QtWidgets.QWidget):
         return Warning_ls
     
     def backTesting(self):
-        global df,top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit
+        
+        if self.hr_1_kbar_cb.isChecked():
+            self.one_hour_backtest()
+            
+        if self.min_15_kbar_cb.isChecked():
+            self.quanter_backtest()
+        
+        '''
+        global df,top_ck,top_stop_ck,bot_ck,bot_stop_ck,positive_top_ck,negative_bot_ck,osc_ratio_limit,skip_reverse_check,no_inverse_in_mid_check,enter_time_check
         df = pd.read_excel('2022-01-01~2025-03-31_小時k_20250401.xlsx') #TODO 之後df需要在回測前更新沒有的資料
         warning_ls = self.checkParam()
         if warning_ls:
@@ -1121,6 +1888,10 @@ class mainwin(QtWidgets.QWidget):
         positive_top_ck = self.tacticCheckbtn5.isChecked()
         negative_bot_ck = self.tacticCheckbtn6.isChecked()
         osc_ratio_limit = self.tacticCheckbtn7.isChecked()
+        skip_reverse_check = self.skip_reverse.isChecked()
+        no_inverse_in_mid_check = self.no_inverse_in_middle.isChecked()
+        enter_time_check = self.enter_time_limits.isChecked()
+        
         
         # 這裡需要提醒什麼都沒勾，但沒勾照樣是可以測
         reply = ""
@@ -1229,6 +2000,7 @@ class mainwin(QtWidgets.QWidget):
         else:
             self.his_df = pd.DataFrame(data = [vals],columns=cols)
         self.df_dict["損益歷史紀錄"] = self.his_df
+        '''
     
     def getReportTable(self,df:pd.DataFrame):
         signal_df = self.getSignalDetail(df)
@@ -1615,8 +2387,6 @@ class RatioOfOSCs(QtWidgets.QDialog):
     def get_new_osc_ratio(self):
         return float(self.val_entry.text())
     
-
-
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     Form = mainwin()
